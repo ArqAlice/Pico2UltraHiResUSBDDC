@@ -328,16 +328,19 @@ const char *_get_descriptor_string(uint index)
 }
 
 // バッファ長制限 バッファオーバーラン防止処理
-void buffer_length_limiter(uint freq, uint *len)
+uint16_t buffer_length_limiter(uint32_t freq, uint16_t length)
 {
-	int32_t limit_length = get_size_remain(&buffer_upsr_data_Lch_0) / get_ratio_upsampling_core0(audio_state.freq);
+	int32_t limit_length = get_size_remain(&buffer_upsr_data_Lch_0) / get_ratio_upsampling_core0(freq);
 
 	limit_length = saturation_i32(limit_length, SIZE_EP_BUFFER, 0);
-
-	if (*len > limit_length)
+	
+	uint16_t output = length;
+	if (length > limit_length)
 	{
-		*len = limit_length;
+		output = limit_length;
 	}
+
+	return output;
 }
 
 // USB EPバッファ取得処理
@@ -354,7 +357,7 @@ uint16_t __not_in_flash_func(usb_ep_data_acquire)(uint bit_depth, int16_t *ep, u
 	{
 	case 32:
 		length = in_length / 4; // (4byte(32bit) /ch)
-		buffer_length_limiter(audio_state.freq, length);
+		length = buffer_length_limiter(audio_state.freq, length);
 		sample_num = length;
 		while (sample_num--)
 		{
@@ -368,7 +371,7 @@ uint16_t __not_in_flash_func(usb_ep_data_acquire)(uint bit_depth, int16_t *ep, u
 
 	case 24:
 		length = in_length / 3; // (3byte(24bit) /ch)
-		buffer_length_limiter(audio_state.freq, length);
+		length = buffer_length_limiter(audio_state.freq, length);
 		sample_num = length;
 		while (sample_num--)
 		{
@@ -383,7 +386,7 @@ uint16_t __not_in_flash_func(usb_ep_data_acquire)(uint bit_depth, int16_t *ep, u
 	case 16:
 	default:
 		length = in_length / 2; // (2byte(16bit) /ch)
-		buffer_length_limiter(audio_state.freq, length);
+		length = buffer_length_limiter(audio_state.freq, length);
 		sample_num = length;
 		while (sample_num--)
 		{
