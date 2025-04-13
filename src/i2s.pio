@@ -1,0 +1,91 @@
+.program I2S_16bit
+
+.side_set 2
+     out null, 16    side 0b01
+     out pins, 1     side 0b00
+     set x, 13       side 0b01
+L1:  out pins, 1     side 0b00
+     jmp x--, L1     side 0b01
+     out pins, 1     side 0b10
+     out null, 16    side 0b11
+     out pins, 1     side 0b10
+     set x, 13       side 0b11
+L2:  out pins, 1     side 0b10
+     jmp x--, L2     side 0b11
+     out pins, 1     side 0b00
+
+
+
+.program LJ_32bit
+
+.side_set 2
+
+    out pins, 1     side 0b00
+    set x, 30       side 0b01
+L1:
+    out pins, 1     side 0b00
+    jmp x--, L1     side 0b01
+    out pins, 1     side 0b10
+    set x, 30       side 0b11
+L2:
+    out pins, 1     side 0b10
+    jmp x--, L2     side 0b11
+
+
+
+.program I2S_32bit
+
+.side_set 2
+
+    out pins, 1     side 0b00
+    set x, 29       side 0b01
+L1:
+    out pins, 1     side 0b00
+    jmp x--, L1     side 0b01
+    out pins, 1     side 0b10
+    nop             side 0b11
+    out pins, 1     side 0b10
+    set x, 29       side 0b11
+L2:
+    out pins, 1     side 0b10
+    jmp x--, L2     side 0b11
+    out pins, 1     side 0b00
+    nop             side 0b01
+
+
+
+.program LJ_32bit_inv
+
+.side_set 2
+
+    out pins, 1     side 0b00
+    set x, 30       side 0b10
+L1:
+    out pins, 1     side 0b00
+    jmp x--, L1     side 0b10
+    out pins, 1     side 0b01
+    set x, 30       side 0b11
+L2:
+    out pins, 1     side 0b01
+    jmp x--, L2     side 0b11
+
+
+.program I2S_32bit_inv
+
+.side_set 2
+
+    out pins, 1     side 0b00
+    set x, 29       side 0b10
+L1:
+    out pins, 1     side 0b00
+    jmp x--, L1     side 0b10
+    out pins, 1     side 0b01
+    nop             side 0b11
+    out pins, 1     side 0b01
+    set x, 29       side 0b11
+L2:
+    out pins, 1     side 0b01
+    jmp x--, L2     side 0b11
+    out pins, 1     side 0b00
+    nop             side 0b10
+
