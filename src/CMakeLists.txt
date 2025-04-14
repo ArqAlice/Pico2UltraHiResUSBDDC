@@ -4,7 +4,9 @@ file(GLOB DSP_SRC
         ${CMAKE_CURRENT_SOURCE_DIR}/../CMSIS/DSP/Source/FilteringFunctions/arm_fir_init_f32.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../CMSIS/DSP/Source/FilteringFunctions/arm_biquad_cascade_df1_f32.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../CMSIS/DSP/Source/FilteringFunctions/arm_biquad_cascade_df1_init_f32.c
-)
+        ${CMAKE_CURRENT_SOURCE_DIR}/../CMSIS/DSP/Source/SupportFunctions/arm_q31_to_float.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/../CMSIS/DSP/Source/BasicMathFunctions/arm_scale_f32.c
+        )
 
 # Add executable. Default name is the project name, version 0.1
 add_executable(Pico2UltraHiResUSBDDC
