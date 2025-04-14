@@ -40,8 +40,8 @@ static void initialize_bq_filter_coef(void)
         biquad0_coeffs[i * 5 + 0] = coef_bq_filter_2x_0[i][0];
         biquad0_coeffs[i * 5 + 1] = coef_bq_filter_2x_0[i][1];
         biquad0_coeffs[i * 5 + 2] = coef_bq_filter_2x_0[i][2];
-        biquad0_coeffs[i * 5 + 3] = coef_bq_filter_2x_0[i][4];
-        biquad0_coeffs[i * 5 + 4] = coef_bq_filter_2x_0[i][5];
+        biquad0_coeffs[i * 5 + 3] = -coef_bq_filter_2x_0[i][4];
+        biquad0_coeffs[i * 5 + 4] = -coef_bq_filter_2x_0[i][5];
     }
     arm_biquad_cascade_df1_init_f32(
         &biquad_filter0,
@@ -55,8 +55,8 @@ static void initialize_bq_filter_coef(void)
         biquad1_coeffs[i * 5 + 0] = coef_bq_filter_2x_1[i][0];
         biquad1_coeffs[i * 5 + 1] = coef_bq_filter_2x_1[i][1];
         biquad1_coeffs[i * 5 + 2] = coef_bq_filter_2x_1[i][2];
-        biquad1_coeffs[i * 5 + 3] = coef_bq_filter_2x_1[i][4];
-        biquad1_coeffs[i * 5 + 4] = coef_bq_filter_2x_1[i][5];
+        biquad1_coeffs[i * 5 + 3] = -coef_bq_filter_2x_1[i][4];
+        biquad1_coeffs[i * 5 + 4] = -coef_bq_filter_2x_1[i][5];
     }
     arm_biquad_cascade_df1_init_f32(
         &biquad_filter1,
@@ -70,8 +70,8 @@ static void initialize_bq_filter_coef(void)
         biquad2_coeffs[i * 5 + 0] = coef_bq_filter_2x_2[i][0];
         biquad2_coeffs[i * 5 + 1] = coef_bq_filter_2x_2[i][1];
         biquad2_coeffs[i * 5 + 2] = coef_bq_filter_2x_2[i][2];
-        biquad2_coeffs[i * 5 + 3] = coef_bq_filter_2x_2[i][4];
-        biquad2_coeffs[i * 5 + 4] = coef_bq_filter_2x_2[i][5];
+        biquad2_coeffs[i * 5 + 3] = -coef_bq_filter_2x_2[i][4];
+        biquad2_coeffs[i * 5 + 4] = -coef_bq_filter_2x_2[i][5];
     }
     arm_biquad_cascade_df1_init_f32(
         &biquad_filter2,
@@ -85,8 +85,8 @@ static void initialize_bq_filter_coef(void)
         biquad3_coeffs[i * 5 + 0] = coef_bq_filter_2x_3[i][0];
         biquad3_coeffs[i * 5 + 1] = coef_bq_filter_2x_3[i][1];
         biquad3_coeffs[i * 5 + 2] = coef_bq_filter_2x_3[i][2];
-        biquad3_coeffs[i * 5 + 3] = coef_bq_filter_2x_3[i][4];
-        biquad3_coeffs[i * 5 + 4] = coef_bq_filter_2x_3[i][5];
+        biquad3_coeffs[i * 5 + 3] = -coef_bq_filter_2x_3[i][4];
+        biquad3_coeffs[i * 5 + 4] = -coef_bq_filter_2x_3[i][5];
     }
     arm_biquad_cascade_df1_init_f32(
         &biquad_filter3,
@@ -100,8 +100,8 @@ static void initialize_bq_filter_coef(void)
         biquad4_coeffs[i * 5 + 0] = coef_bq_filter_4x_0[i][0];
         biquad4_coeffs[i * 5 + 1] = coef_bq_filter_4x_0[i][1];
         biquad4_coeffs[i * 5 + 2] = coef_bq_filter_4x_0[i][2];
-        biquad4_coeffs[i * 5 + 3] = coef_bq_filter_4x_0[i][4];
-        biquad4_coeffs[i * 5 + 4] = coef_bq_filter_4x_0[i][5];
+        biquad4_coeffs[i * 5 + 3] = -coef_bq_filter_4x_0[i][4];
+        biquad4_coeffs[i * 5 + 4] = -coef_bq_filter_4x_0[i][5];
     }
     arm_biquad_cascade_df1_init_f32(
         &biquad_filter4,
@@ -158,7 +158,7 @@ static uint32_t __not_in_flash_func(fast_BQ_filter_2x_0)(uint32_t length, float 
     }
 
     // BiQuad-IIRフィルタを実行する
-    arm_biquad_cascade_df1_f32(&biquad_filter0, NOS_buffer, p_in, length << 1);
+    arm_biquad_cascade_df1_f32(&biquad_filter0, NOS_buffer, p_out, length << 1);
 
     free(NOS_buffer);
     return length << 1;
@@ -179,7 +179,7 @@ static uint32_t __not_in_flash_func(fast_BQ_filter_2x_1)(uint32_t length, float 
     }
 
     // BiQuad-IIRフィルタを実行する
-    arm_biquad_cascade_df1_f32(&biquad_filter1, NOS_buffer, p_in, length << 1);
+    arm_biquad_cascade_df1_f32(&biquad_filter1, NOS_buffer, p_out, length << 1);
 
     free(NOS_buffer);
     return length << 1;
@@ -200,7 +200,7 @@ static uint32_t __not_in_flash_func(fast_BQ_filter_2x_2)(uint32_t length, float 
     }
 
     // BiQuad-IIRフィルタを実行する
-    arm_biquad_cascade_df1_f32(&biquad_filter2, NOS_buffer, p_in, length << 1);
+    arm_biquad_cascade_df1_f32(&biquad_filter2, NOS_buffer, p_out, length << 1);
 
     free(NOS_buffer);
     return length << 1;
@@ -221,14 +221,14 @@ static uint32_t __not_in_flash_func(fast_BQ_filter_2x_3)(uint32_t length, float 
     }
 
     // BiQuad-IIRフィルタを実行する
-    arm_biquad_cascade_df1_f32(&biquad_filter3, NOS_buffer, p_in, length << 1);
+    arm_biquad_cascade_df1_f32(&biquad_filter3, NOS_buffer, p_out, length << 1);
 
     free(NOS_buffer);
     return length << 1;
 }
 
 // upsampling biquad IIR filter NOS統合版 (RAM上で実行する)
-static uint32_t __not_in_flash_func(fast_BQ_filter_4x_0)(uint32_t length, float *p_in, int32_t *p_out)
+static uint32_t __not_in_flash_func(fast_BQ_filter_4x_0)(uint32_t length, float *p_in, float *p_out)
 {
     uint32_t length_buffer = length;
     float *NOS_buffer = (float *)malloc(sizeof(float) * (length << 2));
@@ -244,7 +244,7 @@ static uint32_t __not_in_flash_func(fast_BQ_filter_4x_0)(uint32_t length, float 
     }
 
     // BiQuad-IIRフィルタを実行する
-    arm_biquad_cascade_df1_f32(&biquad_filter4, NOS_buffer, p_in, length << 2);
+    arm_biquad_cascade_df1_f32(&biquad_filter4, NOS_buffer, p_out, length << 2);
 
     free(NOS_buffer);
     return length << 2;
