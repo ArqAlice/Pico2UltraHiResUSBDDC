@@ -31,9 +31,7 @@
 #define SIZE_BQ_DELAY_4 (SIZE_BQ_FILTER_4)
 
 #define SIZE_FIR_FILTER_0 (128)
-
-#define SIZE_FIR_FILTER_1 (64)
-
+#define SIZE_FIR_FILTER_1 (48)
 #define SIZE_FIR_FILTER_2 (48)
 
 

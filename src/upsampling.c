@@ -16,21 +16,23 @@
 #define ARM_FIR_BLOCKSIZE_2 SIZE_EP_BUFFER *RATIO_UPSAMPLING_48K
 
 // 双二次フィルタ構造体
+static arm_biquad_casd_df1_inst_f32 biquad_filter2L;
+static arm_biquad_casd_df1_inst_f32 biquad_filter2R;
 static arm_biquad_casd_df1_inst_f32 biquad_filter3L;
 static arm_biquad_casd_df1_inst_f32 biquad_filter3R;
 static arm_biquad_casd_df1_inst_f32 biquad_filter4L;
 static arm_biquad_casd_df1_inst_f32 biquad_filter4R;
 
 // 双二次フィルタ状態バッファ
+static float biquad2L_state[SIZE_BQ_FILTER_2 * 4];
+static float biquad2R_state[SIZE_BQ_FILTER_2 * 4];
 static float biquad3L_state[SIZE_BQ_FILTER_3 * 4];
 static float biquad3R_state[SIZE_BQ_FILTER_3 * 4];
 static float biquad4L_state[SIZE_BQ_FILTER_4 * 4];
 static float biquad4R_state[SIZE_BQ_FILTER_4 * 4];
 
 // 双二次フィルタ係数
-//static float biquad0_coeffs[SIZE_BQ_FILTER_0 * 5];
-//static float biquad1_coeffs[SIZE_BQ_FILTER_1 * 5];
-//static float biquad2_coeffs[SIZE_BQ_FILTER_2 * 5];
+static float biquad2_coeffs[SIZE_BQ_FILTER_2 * 5];
 static float biquad3_coeffs[SIZE_BQ_FILTER_3 * 5];
 static float biquad4_coeffs[SIZE_BQ_FILTER_4 * 5];
 
@@ -47,12 +49,31 @@ float fir4x0L_state[ARM_FIR_BLOCKSIZE_0 + SIZE_FIR_FILTER_0 - 1];
 float fir4x0R_state[ARM_FIR_BLOCKSIZE_0 + SIZE_FIR_FILTER_0 - 1];
 float fir2x1L_state[ARM_FIR_BLOCKSIZE_1 + SIZE_FIR_FILTER_1 - 1];
 float fir2x1R_state[ARM_FIR_BLOCKSIZE_1 + SIZE_FIR_FILTER_1 - 1];
-float fir2x2L_state[ARM_FIR_BLOCKSIZE_2 + SIZE_FIR_FILTER_2 - 1];
-float fir2x2R_state[ARM_FIR_BLOCKSIZE_2 + SIZE_FIR_FILTER_2 - 1];
 
 // BiQuad-IIRフィルタの係数を初期化する
 static void initialize_bq_filter_coef(void)
 {
+    for (uint16_t i = 0; i < SIZE_BQ_FILTER_2; i++)
+    {
+        biquad2_coeffs[i * 5 + 0] = coef_bq_filter_2x_2[i][0];
+        biquad2_coeffs[i * 5 + 1] = coef_bq_filter_2x_2[i][1];
+        biquad2_coeffs[i * 5 + 2] = coef_bq_filter_2x_2[i][2];
+        biquad2_coeffs[i * 5 + 3] = -coef_bq_filter_2x_2[i][4];
+        biquad2_coeffs[i * 5 + 4] = -coef_bq_filter_2x_2[i][5];
+    }
+    arm_biquad_cascade_df1_init_f32(
+        &biquad_filter2L,
+        SIZE_BQ_FILTER_2,
+        biquad2_coeffs,
+        biquad2L_state
+    );
+    arm_biquad_cascade_df1_init_f32(
+        &biquad_filter2R,
+        SIZE_BQ_FILTER_2,
+        biquad2_coeffs,
+        biquad2R_state
+    );
+
     for (uint16_t i = 0; i < SIZE_BQ_FILTER_3; i++)
     {
         biquad3_coeffs[i * 5 + 0] = coef_bq_filter_2x_3[i][0];
@@ -95,8 +116,6 @@ static void initialize_bq_filter_coef(void)
     arm_fir_interpolate_init_f32(&fir_filter4x0R, 4, size_coef_fir_filter_4x_0, coef_fir_filter_4x_0, fir4x0R_state, ARM_FIR_BLOCKSIZE_0);
     arm_fir_interpolate_init_f32(&fir_filter2x1L, 2, size_coef_fir_filter_2x_1, coef_fir_filter_2x_1, fir2x1L_state, ARM_FIR_BLOCKSIZE_1);
     arm_fir_interpolate_init_f32(&fir_filter2x1R, 2, size_coef_fir_filter_4x_0, coef_fir_filter_2x_1, fir2x1R_state, ARM_FIR_BLOCKSIZE_1);
-    arm_fir_interpolate_init_f32(&fir_filter2x2L, 2, size_coef_fir_filter_4x_0, coef_fir_filter_2x_2, fir2x2L_state, ARM_FIR_BLOCKSIZE_2);
-    arm_fir_interpolate_init_f32(&fir_filter2x2R, 2, size_coef_fir_filter_4x_0, coef_fir_filter_2x_2, fir2x2R_state, ARM_FIR_BLOCKSIZE_2);
 }
 
 // アップサンプリングフィルタの初期化処理
@@ -109,6 +128,11 @@ extern void init_upsampling_filter(void)
 // BiQuad-IIRフィルタの遅延バッファをクリアする
 extern void clear_bq_filter_delay(void)
 {
+    for (uint16_t i = 0; i < SIZE_BQ_DELAY_2 * 4; i++)
+    {
+        biquad2L_state[i] = 0;
+        biquad2R_state[i] = 0;
+    }
     for (uint16_t i = 0; i < SIZE_BQ_DELAY_3 * 4; i++)
     {
         biquad3L_state[i] = 0;
@@ -129,11 +153,6 @@ extern void clear_bq_filter_delay(void)
         fir2x1L_state[i] = 0;
         fir2x1R_state[i] = 0;
     }
-    for (uint16_t i = 0; i < (ARM_FIR_BLOCKSIZE_2 + SIZE_FIR_FILTER_2 - 1); i++)
-    {
-        fir2x2L_state[i] = 0;
-        fir2x2R_state[i] = 0;
-    }
 }
 
 // upsampling FIR 4x
@@ -147,6 +166,27 @@ static uint32_t __not_in_flash_func(FIR_filter_4x)(uint32_t length, float *input
 static uint32_t __not_in_flash_func(FIR_filter_2x)(uint32_t length, float *input, float *output, arm_fir_interpolate_instance_f32 *S)
 {
     arm_fir_interpolate_f32(S, input, output, length);
+    return length << 1;
+}
+
+// upsampling biquad IIR filter NOS統合版 (RAM上で実行する)
+static uint32_t __not_in_flash_func(fast_BQ_filter_2x_2)(uint32_t length, float *p_in, float *p_out, arm_biquad_casd_df1_inst_f32 *S)
+{
+    uint32_t length_buffer = length;
+    float *NOS_buffer = (float *)malloc(sizeof(float) * (length << 1));
+    float *p_NOS_buffer = NOS_buffer;
+
+    // サンプル数を2倍にする NOS方式
+    while (length_buffer--)
+    {
+        *(p_NOS_buffer++) = *(p_in);
+        *(p_NOS_buffer++) = *(p_in++);
+    }
+
+    // BiQuad-IIRフィルタを実行する
+    arm_biquad_cascade_df1_f32(S, NOS_buffer, p_out, length << 1);
+
+    free(NOS_buffer);
     return length << 1;
 }
 
@@ -243,8 +283,8 @@ void __not_in_flash_func(upsampling_process_core0)(void)
 
             if (!CORE0_UPSAMPLING_192K)
             {
-                len_L = FIR_filter_2x(length, buffer_from_ep_Lch_float, upsample_buffer_0_L, &fir_filter2x2L);
-                len_R = FIR_filter_2x(length, buffer_from_ep_Rch_float, upsample_buffer_0_R, &fir_filter2x2L);
+                len_L = fast_BQ_filter_2x_2(length, buffer_from_ep_Lch_float, upsample_buffer_0_L, &biquad_filter2L);
+                len_R = fast_BQ_filter_2x_2(length, buffer_from_ep_Rch_float, upsample_buffer_0_R, &biquad_filter2R);
             }
             else
             {
@@ -280,10 +320,10 @@ void __not_in_flash_func(upsampling_process_core0)(void)
             if (!CORE0_UPSAMPLING_192K)
             {
                 len_L = FIR_filter_2x(length, buffer_from_ep_Lch_float, upsample_buffer_0_L, &fir_filter2x1L);
-                len_L = FIR_filter_2x(len_L, upsample_buffer_0_L, upsample_buffer_1_L, &fir_filter2x2L);
+                len_L = fast_BQ_filter_2x_2(len_L, upsample_buffer_0_L, upsample_buffer_1_L, &biquad_filter2L);
 
                 len_R = FIR_filter_2x(length, buffer_from_ep_Rch_float, upsample_buffer_0_R, &fir_filter2x1R);
-                len_R = FIR_filter_2x(len_R, upsample_buffer_0_R, upsample_buffer_1_R, &fir_filter2x2R);
+                len_R = fast_BQ_filter_2x_2(len_R, upsample_buffer_0_R, upsample_buffer_1_R, &biquad_filter2R);
             }
             else
             {
@@ -319,8 +359,8 @@ void __not_in_flash_func(upsampling_process_core0)(void)
 
             if (!CORE0_UPSAMPLING_192K)
             {
-                len_L = FIR_filter_2x(len_L, upsample_buffer_1_L, upsample_buffer_0_L, &fir_filter2x2L);
-                len_R = FIR_filter_2x(len_R, upsample_buffer_1_R, upsample_buffer_0_R, &fir_filter2x2R);
+                len_L = fast_BQ_filter_2x_2(len_L, upsample_buffer_1_L, upsample_buffer_0_L, &biquad_filter2L);
+                len_R = fast_BQ_filter_2x_2(len_R, upsample_buffer_1_R, upsample_buffer_0_R, &biquad_filter2R);
             }
 
             save = save_and_disable_interrupts();
