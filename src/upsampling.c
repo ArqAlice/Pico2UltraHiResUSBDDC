@@ -115,7 +115,7 @@ static void initialize_bq_filter_coef(void)
     arm_fir_interpolate_init_f32(&fir_filter4x0L, 4, size_coef_fir_filter_4x_0, coef_fir_filter_4x_0, fir4x0L_state, ARM_FIR_BLOCKSIZE_0);
     arm_fir_interpolate_init_f32(&fir_filter4x0R, 4, size_coef_fir_filter_4x_0, coef_fir_filter_4x_0, fir4x0R_state, ARM_FIR_BLOCKSIZE_0);
     arm_fir_interpolate_init_f32(&fir_filter2x1L, 2, size_coef_fir_filter_2x_1, coef_fir_filter_2x_1, fir2x1L_state, ARM_FIR_BLOCKSIZE_1);
-    arm_fir_interpolate_init_f32(&fir_filter2x1R, 2, size_coef_fir_filter_4x_0, coef_fir_filter_2x_1, fir2x1R_state, ARM_FIR_BLOCKSIZE_1);
+    arm_fir_interpolate_init_f32(&fir_filter2x1R, 2, size_coef_fir_filter_2x_1, coef_fir_filter_2x_1, fir2x1R_state, ARM_FIR_BLOCKSIZE_1);
 }
 
 // アップサンプリングフィルタの初期化処理
