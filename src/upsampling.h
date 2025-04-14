@@ -64,6 +64,6 @@ extern const uint32_t size_coef_fir_filter_2x_0;
 extern void init_upsampling_filter(void);
 extern void clear_bq_filter_delay(void);
 extern void __not_in_flash_func(upsampling_process_core0)(void);
-extern uint32_t __not_in_flash_func(upsampling_process_core1)(int32_t *in_L, int32_t *in_R, int32_t *out_L, int32_t *out_R, uint32_t length);
+extern uint32_t __not_in_flash_func(upsampling_process_core1)(float *in_L, float *in_R, float *out_L, float *out_R, uint32_t length);
 
 #endif /* _UPSAMPLING_H_ */

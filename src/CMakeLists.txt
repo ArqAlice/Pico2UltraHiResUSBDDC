@@ -1,3 +1,11 @@
+# CMSIS-DSP 必要ソースを選択（使う関数に応じて最小限にする）
+file(GLOB DSP_SRC
+        ${CMAKE_CURRENT_SOURCE_DIR}/../CMSIS/DSP/Source/FilteringFunctions/arm_fir_f32.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/../CMSIS/DSP/Source/FilteringFunctions/arm_fir_init_f32.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/../CMSIS/DSP/Source/FilteringFunctions/arm_biquad_cascade_df1_f32.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/../CMSIS/DSP/Source/FilteringFunctions/arm_biquad_cascade_df1_init_f32.c
+)
+
 # Add executable. Default name is the project name, version 0.1
 add_executable(Pico2UltraHiResUSBDDC
         main.c
@@ -11,6 +19,7 @@ add_executable(Pico2UltraHiResUSBDDC
         ringbuffer.c
         debug_with_gpio.c
         ess_specific.c
+        ${DSP_SRC}
 )
 
 pico_set_program_name(Pico2UltraHiResUSBDDC "Pico2UltraHiResUSBDDC")
@@ -32,6 +41,8 @@ target_include_directories(Pico2UltraHiResUSBDDC PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}
         ${CMAKE_CURRENT_SOURCE_DIR}/../pico-extras
         ${CMAKE_CURRENT_SOURCE_DIR}/..
+        ${CMAKE_CURRENT_LIST_DIR}/../CMSIS/Core/Include
+        ${CMAKE_CURRENT_LIST_DIR}/../CMSIS/DSP/Include
 )
 
 # Add any user requested libraries

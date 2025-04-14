@@ -28,6 +28,21 @@ extern inline float saturation_f32(float in, float max, float min)
 		return min;
 	return in;
 }
+
+// int32_t型をfloat型にまとめてキャスト
+inline void int32_to_float_array(int32_t *input, float *output, uint32_t length)
+{
+    for(int i=0; i<length; i++)
+        output[i] = (float)input[i];
+}
+
+// float型をint32_t型にまとめてキャスト
+inline void float_to_int32_array(float *input, int32_t *output, uint32_t length)
+{
+    for(int i=0; i<length; i++)
+        output[i] = (int32_t)input[i];
+}
+
 // アップサンプリング倍率取得関数
 extern inline uint16_t get_ratio_upsampling_core0(uint32_t freq)
 {

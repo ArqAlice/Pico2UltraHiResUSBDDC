@@ -126,6 +126,8 @@ extern uint16_t length_remain_to_I2S_FIFO;
 
 extern inline int32_t saturation_i32(int32_t in, int32_t max, int32_t min);
 extern inline float saturation_f32(float in, float max, float min);
+extern inline void int32_to_float_array(int32_t *input, float *output, uint32_t length);
+extern inline void float_to_int32_array(float *input, int32_t *output, uint32_t length);
 extern inline uint16_t get_ratio_upsampling_core0(uint32_t freq);
 extern inline uint16_t get_ratio_upsampling_core1(void);
 inline uint16_t ratio_to_bitshift(uint16_t ratio);

@@ -100,10 +100,10 @@ void __not_in_flash_func(pwm_wrap_handler)(void)
 }
 
 // アップサンプリングに使用するメモリを静的確保
-static int32_t from_core0_Lch[SIZE_DMA_TX_BUF / RATIO_UPSAMPLING_CORE1 / 2];
-static int32_t from_core0_Rch[SIZE_DMA_TX_BUF / RATIO_UPSAMPLING_CORE1 / 2];
-static int32_t upsr_core1_Lch[SIZE_DMA_TX_BUF / 2];
-static int32_t upsr_core1_Rch[SIZE_DMA_TX_BUF / 2];
+static float from_core0_Lch[SIZE_DMA_TX_BUF / RATIO_UPSAMPLING_CORE1 / 2];
+static float from_core0_Rch[SIZE_DMA_TX_BUF / RATIO_UPSAMPLING_CORE1 / 2];
+static float upsr_core1_Lch[SIZE_DMA_TX_BUF / 2];
+static float upsr_core1_Rch[SIZE_DMA_TX_BUF / 2];
 
 // 転送用バッファを静的確保
 static int32_t buffer_i2s_transmit[SIZE_DMA_TX_BUF];
@@ -128,8 +128,8 @@ void __not_in_flash_func(dma_tx_start)(void)
             int32_t transmit_ref_size = audio_state.freq * get_ratio_upsampling_core0(audio_state.freq) / 1000 * (TIMER_US_CORE1 / 1000.0);
             length = saturation_i32(length, transmit_ref_size, 0);
 
-            ringbuf_read_array_spinlock(from_core0_Lch, length, &buffer_upsr_data_Lch_0);
-            ringbuf_read_array_spinlock(from_core0_Rch, length, &buffer_upsr_data_Rch_0);
+            ringbuf_read_array_spinlock((int32_t*)from_core0_Lch, length, &buffer_upsr_data_Lch_0);
+            ringbuf_read_array_spinlock((int32_t*)from_core0_Rch, length, &buffer_upsr_data_Rch_0);
 
             // Core1で、さらにアップサンプリングをする(絶対250us以内に終わらせること)
             length = upsampling_process_core1(from_core0_Lch, from_core0_Rch, upsr_core1_Lch, upsr_core1_Rch, length);
@@ -137,8 +137,8 @@ void __not_in_flash_func(dma_tx_start)(void)
             int count = 0;
             for (uint i = 0; i < length; i++)
             {
-                buffer_i2s_transmit[count++] = upsr_core1_Lch[i];
-                buffer_i2s_transmit[count++] = upsr_core1_Rch[i];
+                buffer_i2s_transmit[count++] = (int32_t)upsr_core1_Lch[i];
+                buffer_i2s_transmit[count++] = (int32_t)upsr_core1_Rch[i];
             }
 
             uint32_t save = save_and_disable_interrupts();

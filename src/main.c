@@ -191,6 +191,10 @@ int main(void)
 	gpio_init(25);
 	gpio_set_dir(25, GPIO_OUT);
 
+	// デバッグ用
+	gpio_init(2);
+	gpio_set_dir(2, GPIO_OUT);
+
 	usb_sound_card_init();
 	sleep_ms(100);
 
@@ -203,7 +207,9 @@ int main(void)
 		if (can_proceed_upsampling_core0)
 		{
 			can_proceed_upsampling_core0 = false;
+			gpio_put(2, true);
 			upsampling_process_core0();
+			gpio_put(2, false);
 		}
 		sleep_us(1);
 	}
