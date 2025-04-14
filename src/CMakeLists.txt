@@ -2,6 +2,8 @@
 file(GLOB DSP_SRC
         ${CMAKE_CURRENT_SOURCE_DIR}/../CMSIS/DSP/Source/FilteringFunctions/arm_fir_f32.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../CMSIS/DSP/Source/FilteringFunctions/arm_fir_init_f32.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/../CMSIS/DSP/Source/FilteringFunctions/arm_fir_interpolate_f32.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/../CMSIS/DSP/Source/FilteringFunctions/arm_fir_interpolate_init_f32.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../CMSIS/DSP/Source/FilteringFunctions/arm_biquad_cascade_df1_f32.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../CMSIS/DSP/Source/FilteringFunctions/arm_biquad_cascade_df1_init_f32.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../CMSIS/DSP/Source/SupportFunctions/arm_q31_to_float.c
