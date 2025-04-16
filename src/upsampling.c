@@ -318,8 +318,8 @@ void __not_in_flash_func(upsampling_process_core0)(void)
             int32_to_float_array(buffer_copy_from_ep_right_ch, buffer_from_ep_Rch_float, length);
 
             // FIR補間で振幅が小さくなるためあらかじめ大きくしておく
-            arm_scale_f32(buffer_from_ep_Lch_float, 1.2, buffer_from_ep_Lch_float, length);
-            arm_scale_f32(buffer_from_ep_Rch_float, 1.2, buffer_from_ep_Rch_float, length);
+            arm_scale_f32(buffer_from_ep_Lch_float, DEFAULT_GAIN_RATIO * 2., buffer_from_ep_Lch_float, length);
+            arm_scale_f32(buffer_from_ep_Rch_float, DEFAULT_GAIN_RATIO * 2., buffer_from_ep_Rch_float, length);
 
             if (!CORE0_UPSAMPLING_192K)
             {
@@ -359,8 +359,8 @@ void __not_in_flash_func(upsampling_process_core0)(void)
             int32_to_float_array(buffer_copy_from_ep_right_ch, buffer_from_ep_Rch_float, length);
 
             // FIR補間で振幅が小さくなるためあらかじめ大きくしておく
-            arm_scale_f32(buffer_from_ep_Lch_float, 2.4, buffer_from_ep_Lch_float, length);
-            arm_scale_f32(buffer_from_ep_Rch_float, 2.4, buffer_from_ep_Rch_float, length);
+            arm_scale_f32(buffer_from_ep_Lch_float, DEFAULT_GAIN_RATIO * 4., buffer_from_ep_Lch_float, length);
+            arm_scale_f32(buffer_from_ep_Rch_float, DEFAULT_GAIN_RATIO * 4., buffer_from_ep_Rch_float, length);
 
             len_L = FIR_filter_4x(length, buffer_from_ep_Lch_float, upsample_buffer_1_L, &fir_filter4x0L);
             len_R = FIR_filter_4x(length, buffer_from_ep_Rch_float, upsample_buffer_1_R, &fir_filter4x0R);

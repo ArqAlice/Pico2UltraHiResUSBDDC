@@ -1,6 +1,6 @@
 # Pico2UltraHiResUSBDDC (USB Digital Audio Device)
 
-本プロジェクトは、**USB Audio Class 1.0** に準拠した **USBデジタルオーディオコンバータ（USB-DDC）** です。  
+本プロジェクトは、RP2350(RaspberryPiPico2)上で動作する、**USB Audio Class 1.0** に準拠した **USBデジタルオーディオコンバータ（USB-DDC）** です。  
 USB経由で入力された2ch PCMオーディオ信号に対し、高品質なアップサンプリング処理を行い、**I²Sインターフェイス**を通じてDACチップへ出力します。
 
 ---
@@ -15,9 +15,9 @@ USB経由で入力された2ch PCMオーディオ信号に対し、高品質な�
 ## ✨ 特長
 
 - USB Audio Class 1.0 準拠（OS標準ドライバで動作）
-- リアルタイム・マルチステージ BiQuad IIR フィルタによる最大32倍アップサンプリング
+- リアルタイム・FIR/IIRハイブリッドフィルタによる最大32倍アップサンプリング
 - 2ch ステレオ PCM 入力（16bit / 24bit）
-- 複数のDACチップと動作確認済（例：TI PCM5102, ESS ES9010K2M）
+- 複数のDACチップと動作確認済（TI PCM5102, ESS ES9010K2M）
 
 ---
 
@@ -60,7 +60,7 @@ USB経由で入力された2ch PCMオーディオ信号に対し、高品質な�
   - Core0：USB通信処理 + アップサンプリング処理  
   - Core1：アップサンプリング処理 + DMA + I²S 送信処理
 - **アップサンプリング構成**  
-  - Core0:3段構成の BiQuad-IIR による 2x × 2x × 2x = 8x 拡張
+  - Core0:2段構成の FIRおよびBiQuad-IIR による 4x × 2x = 8x 拡張
   - Core1:1段構成の BiQuad-IIR による 4x 拡張
 - **USB制御**  
   - LUFAベースの USB Audio Class 実装

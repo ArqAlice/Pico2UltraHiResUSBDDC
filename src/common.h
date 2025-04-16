@@ -16,13 +16,13 @@
 
 // User Configurable ------------------------------------------------------------------
 
-// I2S信号スルーレート高速化
+// Faster I2S slew rate
 #define I2S_SLEWRATE_FAST_ENABLE (false)
 
-// I2S信号出力電流強化
+// Enhancement I2S signal output current
 #define I2S_STRENGTH_REINFORCE_ENABLE (true)
 
-// パワーモード切り替えピン
+// Power Mode Switch Pin
 #define POWER_MODE_SWITCH_PIN (18)
 #define ALWAYS_HIGH_POWER (false)
 #define ALWAYS_LOW_POWER (false)
@@ -32,7 +32,7 @@
 #define I2C_SDA (26)
 #define I2C_SCL (27)
 
-// I2Sピン sideset0:BCLK, sideset1:LRCK (if No Changed)
+// I2S Pin : sideset0:BCLK, sideset1:LRCK (if No Changed)
 #define I2S_SIDESET_CHANGE (false)
 #define I2S_DATA_PIN (20)
 #define I2S_SIDESET_BASE (21)
@@ -40,6 +40,7 @@
 // Upsampler control
 #define BYPASS_CORE1_UPSAMPLING (true)
 #define CORE0_UPSAMPLING_192K (false)
+#define DEFAULT_GAIN_RATIO (0.6) // Adjust this according to your filter to avoid clipping.
 
 // ESS DAC Specific
 #define USE_ESS_DAC (false)
