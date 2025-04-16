@@ -3,7 +3,7 @@
 cmake_minimum_required(VERSION 3.13)
 
 # Compiler Optimization
-add_compile_options(-O2 -g -Wall)
+add_compile_options(-O3 -mcpu=cortex-m33 -mfpu=fpv5-sp-d16 -ffast-math -funroll-loops -Wall)
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)

@@ -16,13 +16,13 @@
 
 // User Configurable ------------------------------------------------------------------
 
-// I2S信号スルーレート高速化
+// Faster I2S slew rate
 #define I2S_SLEWRATE_FAST_ENABLE (false)
 
-// I2S信号出力電流強化
+// Enhancement I2S signal output current
 #define I2S_STRENGTH_REINFORCE_ENABLE (true)
 
-// パワーモード切り替えピン
+// Power Mode Switch Pin
 #define POWER_MODE_SWITCH_PIN (18)
 #define ALWAYS_HIGH_POWER (false)
 #define ALWAYS_LOW_POWER (false)
@@ -32,7 +32,7 @@
 #define I2C_SDA (26)
 #define I2C_SCL (27)
 
-// I2Sピン sideset0:BCLK, sideset1:LRCK (if No Changed)
+// I2S Pin : sideset0:BCLK, sideset1:LRCK (if No Changed)
 #define I2S_SIDESET_CHANGE (false)
 #define I2S_DATA_PIN (20)
 #define I2S_SIDESET_BASE (21)
@@ -40,6 +40,7 @@
 // Upsampler control
 #define BYPASS_CORE1_UPSAMPLING (true)
 #define CORE0_UPSAMPLING_192K (false)
+#define DEFAULT_GAIN_RATIO (0.6) // Adjust this according to your filter to avoid clipping.
 
 // ESS DAC Specific
 #define USE_ESS_DAC (false)
@@ -126,6 +127,8 @@ extern uint16_t length_remain_to_I2S_FIFO;
 
 extern inline int32_t saturation_i32(int32_t in, int32_t max, int32_t min);
 extern inline float saturation_f32(float in, float max, float min);
+extern inline void int32_to_float_array(int32_t *input, float *output, uint32_t length);
+extern inline void float_to_int32_array(float *input, int32_t *output, uint32_t length);
 extern inline uint16_t get_ratio_upsampling_core0(uint32_t freq);
 extern inline uint16_t get_ratio_upsampling_core1(void);
 inline uint16_t ratio_to_bitshift(uint16_t ratio);
