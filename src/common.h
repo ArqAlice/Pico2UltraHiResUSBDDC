@@ -13,10 +13,7 @@
 #include <string.h>
 #include "pico/stdlib.h"
 #include "ringbuffer.h"
-
-// ESS DAC Kind
-#define ES9010K2M 0
-#define ES9039Q2M 1
+#include "ess_specific.h"
 
 // User Configurable ------------------------------------------------------------------
 
@@ -49,7 +46,7 @@
 // ESS DAC Specific
 #define USE_ESS_DAC (true)
 #define KIND_ESS_DAC (ES9039Q2M)
-#define I2C_ESS_DAC_ADDR (0x48)
+#define I2C_ESS_DAC_ADDR (ADDR0_ES9039Q2M)
 #define DAC_ENABLE_PIN (28)
 
 // User Configurable end ------------------------------------------------------------
