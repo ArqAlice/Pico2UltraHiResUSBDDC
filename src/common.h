@@ -14,6 +14,10 @@
 #include "pico/stdlib.h"
 #include "ringbuffer.h"
 
+// ESS DAC Kind
+#define ES9010K2M 0
+#define ES9039Q2M 1
+
 // User Configurable ------------------------------------------------------------------
 
 // Faster I2S slew rate
@@ -43,7 +47,8 @@
 #define DEFAULT_GAIN_RATIO (0.6) // Adjust this according to your filter to avoid clipping.
 
 // ESS DAC Specific
-#define USE_ESS_DAC (false)
+#define USE_ESS_DAC (true)
+#define KIND_ESS_DAC (ES9039Q2M)
 #define I2C_ESS_DAC_ADDR (0x48)
 #define DAC_ENABLE_PIN (28)
 
