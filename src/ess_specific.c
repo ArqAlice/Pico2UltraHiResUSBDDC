@@ -14,17 +14,82 @@ void ess_dac_i2c_setup(void)
 {
 	uint8_t i2cbuf[2] = {0, 0};
 
-	// DPLL/ASRCバンド幅設定(ジッタが多いので少し広めに)
-	i2cbuf[0] = 0x0C;
-	i2cbuf[1] = 0xC8; // default 0x5A, 0xB0~C8くらいから動く
-	i2c_write_blocking(I2C_PORT, I2C_ESS_DAC_ADDR, i2cbuf, 2, true);
-	sleep_ms(10);
+	if(KIND_ESS_DAC == ES9010K2M)
+	{
+		if(!CORE0_UPSAMPLING_192K)
+		{
+		// 内蔵アップサンプリングを使用しない
+		i2cbuf[0] = 0x15; // Resister 21
+		i2cbuf[1] = 0x01; // bypass OSF
+		i2c_write_blocking(I2C_PORT, I2C_ESS_DAC_ADDR >>1, i2cbuf, 2, true);
+		sleep_ms(10);
+		}
 
-	// 内蔵アップサンプリングを使用しない
-	i2cbuf[0] = 0x15;
-	i2cbuf[1] = 0x01; // bypass OSF
-	i2c_write_blocking(I2C_PORT, I2C_ESS_DAC_ADDR, i2cbuf, 2, true);
-	sleep_ms(10);
+		// DPLL/ASRCバンド幅設定(ジッタが多いので少し広めに)
+		i2cbuf[0] = 0x0C; // Resister 12
+		i2cbuf[1] = 0xC8; // default 0x5A, 0xB0~C8くらいから動く
+		i2c_write_blocking(I2C_PORT, I2C_ESS_DAC_ADDR >>1, i2cbuf, 2, true);
+		sleep_ms(10);
+	}
+
+	else if(KIND_ESS_DAC == ES9038Q2M)
+	{
+		if(!CORE0_UPSAMPLING_192K)
+		{
+			// 内蔵アップサンプリングを使用しない
+			i2cbuf[0] = 0x07; // Resister 7
+			i2cbuf[1] = 0x04; // bypass OSF
+			i2c_write_blocking(I2C_PORT, I2C_ESS_DAC_ADDR >>1, i2cbuf, 2, true);
+			sleep_ms(10);
+		}
+
+		// DPLLバンド幅設定(ジッタが多いので少し広めに)
+		i2cbuf[0] = 0x0C; // Resister 12
+		i2cbuf[1] = 0x00; // いったん無効化しておく TODO:有効化
+		i2c_write_blocking(I2C_PORT, I2C_ESS_DAC_ADDR >>1, i2cbuf, 2, true);
+		sleep_ms(10);		
+	}
+
+	else if(KIND_ESS_DAC == ES9039Q2M)
+	{
+		if((!BYPASS_CORE1_UPSAMPLING) && (!CORE0_UPSAMPLING_192K))
+		{
+			// 768kHz入力を有効化し、DACを有効化する
+			i2cbuf[0] = 0x00; // Resister 0: SYSTEM_CONFIG
+			i2cbuf[1] = 0x42; // Enable 64fs mode, enable DAC
+			i2c_write_blocking(I2C_PORT, I2C_ESS_DAC_ADDR >>1, i2cbuf, 2, true);
+			sleep_ms(10);
+		}
+		else
+		{
+			// DACを有効化する
+			i2cbuf[0] = 0x00; // Resister 0: SYSTEM_CONFIG
+			i2cbuf[1] = 0x02; // enable DAC
+			i2c_write_blocking(I2C_PORT, I2C_ESS_DAC_ADDR >>1, i2cbuf, 2, true);
+			sleep_ms(10);
+		}
+
+		if(!CORE0_UPSAMPLING_192K)
+		{
+			// 内蔵アップサンプリングを使用しない
+			i2cbuf[0] = 0x5A; // Resister 90: DAC_PATH_CONFIG
+			i2cbuf[1] = 0x03; // bypass FIR2x, FIR4x
+			i2c_write_blocking(I2C_PORT, I2C_ESS_DAC_ADDR >>1, i2cbuf, 2, true);
+			sleep_ms(10);
+		}
+
+		// DAC interpolation path clock diable
+		i2cbuf[0] = 0x01; // Resister 1: SYS_MODE_CONFIG
+		i2cbuf[1] = 0xC1; // enable DAC_CLK, enable SYNC Mode, enable TDM decode
+		i2c_write_blocking(I2C_PORT, I2C_ESS_DAC_ADDR >>1, i2cbuf, 2, true);
+		sleep_ms(10);
+
+		// DPLLバンド幅設定
+		i2cbuf[0] = 0x1D; // Resister 29: DPLL_BW
+		i2cbuf[1] = 0x30;
+		i2c_write_blocking(I2C_PORT, I2C_ESS_DAC_ADDR >>1, i2cbuf, 2, true);
+		sleep_ms(10);
+	}
 }
 
 void ess_dac_initialize(void)

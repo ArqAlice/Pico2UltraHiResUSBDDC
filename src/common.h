@@ -13,6 +13,7 @@
 #include <string.h>
 #include "pico/stdlib.h"
 #include "ringbuffer.h"
+#include "ess_specific.h"
 
 // User Configurable ------------------------------------------------------------------
 
@@ -23,6 +24,7 @@
 #define I2S_STRENGTH_REINFORCE_ENABLE (true)
 
 // Power Mode Switch Pin
+// The Hi-Power Mode outputs 1536kHz/1411.2kHz and is only supported by a limited number of DACs.
 #define POWER_MODE_SWITCH_PIN (18)
 #define ALWAYS_HIGH_POWER (false)
 #define ALWAYS_LOW_POWER (false)
@@ -44,7 +46,8 @@
 
 // ESS DAC Specific
 #define USE_ESS_DAC (false)
-#define I2C_ESS_DAC_ADDR (0x48)
+#define KIND_ESS_DAC (ES9010K2M)
+#define I2C_ESS_DAC_ADDR (ADDR0_ES9039Q2M)
 #define DAC_ENABLE_PIN (28)
 
 // User Configurable end ------------------------------------------------------------
