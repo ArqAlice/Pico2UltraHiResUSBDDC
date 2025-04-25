@@ -48,6 +48,7 @@ USB経由で入力された2ch PCMオーディオ信号に対し、高品質な�
 
 - **TI PCM5102**
 - **ESS ES9010K2M**  
+- **ESS ES9039Q2M**
 その他、32bit I²S インターフェースをサポートする DAC チップで使用可能です。
 
 ---
@@ -118,7 +119,14 @@ DAC ENABLE(PCM5102では不要)
 
 ### ESS DAC Specific
 
-ESS製DAC(ES9010K2M)にて使用する場合は、USE_ESS_DAC をtrueにしてください。
+ESS製DACにて使用する場合は、USE_ESS_DAC をtrueにしてください。  
+
+現在、動作確認済みのESS製DACは、ES9010K2MとES9039Q2Mの2種類になります。  
+
+「KIND_ESS_DAC」のdefineに使用するESS DACの名称を書いてください。  
+ES9010K2Mを使用する場合は、「ES9010K2M」、ES9039Q2Mを使用する場合は「ES9039Q2M」になります。  
+
+なお、ES9039Q2Mは1536kHz/1411.2kHz入力をサポートせず、768kHz/705.6kHzまでとなるため、注意してください。
 
 ## 📚 ライセンス
 
