@@ -29,12 +29,6 @@ void core1_main()
 	// I2S初期化
 	init_i2s_interface();
 
-	// デバッグ用GPIO
-	gpio_init(7);
-	gpio_set_dir(7, true);
-	gpio_init(8);
-	gpio_set_dir(8, true);
-
 	while (true)
 	{
 		dma_tx_start();

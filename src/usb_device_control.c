@@ -9,6 +9,7 @@
 #include "pico/usb_device.h"
 #include "lufa/AudioClassCommon.h"
 #include "common.h"
+#include "upsampling.h"
 
 // todo make descriptor strings should probably belong to the configs
 static char *descriptor_strings[] =
