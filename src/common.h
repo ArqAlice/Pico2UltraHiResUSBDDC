@@ -25,30 +25,30 @@
 
 // Power Mode Switch Pin
 // The Hi-Power Mode outputs 1536kHz/1411.2kHz and is only supported by a limited number of DACs.
-#define POWER_MODE_SWITCH_PIN (18)
-#define ALWAYS_HIGH_POWER (false)
+#define POWER_MODE_SWITCH_PIN (0)
+#define ALWAYS_HIGH_POWER (true)
 #define ALWAYS_LOW_POWER (false)
 
 // I2C
 #define I2C_PORT (i2c1)
-#define I2C_SDA (26)
-#define I2C_SCL (27)
+#define I2C_SDA (6)
+#define I2C_SCL (7)
 
 // I2S Pin : sideset0:BCLK, sideset1:LRCK (if No Changed)
 #define I2S_SIDESET_CHANGE (false)
-#define I2S_DATA_PIN (20)
-#define I2S_SIDESET_BASE (21)
+#define I2S_DATA_PIN (26)
+#define I2S_SIDESET_BASE (27)
 
 // Upsampler control
-#define BYPASS_CORE1_UPSAMPLING (true)
+#define BYPASS_CORE1_UPSAMPLING (false)
 #define CORE0_UPSAMPLING_192K (false)
 #define DEFAULT_GAIN_RATIO (0.6) // Adjust this according to your filter to avoid clipping.
 
 // ESS DAC Specific
-#define USE_ESS_DAC (false)
-#define KIND_ESS_DAC (ES9010K2M)
-#define I2C_ESS_DAC_ADDR (ADDR0_ES9039Q2M)
-#define DAC_ENABLE_PIN (28)
+#define USE_ESS_DAC (true)
+#define KIND_ESS_DAC (ES9038Q2M)
+#define I2C_ESS_DAC_ADDR (ADDR0_ES9038Q2M)
+#define DAC_ENABLE_PIN (5)
 
 // User Configurable end ------------------------------------------------------------
 

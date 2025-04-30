@@ -34,20 +34,56 @@ void ess_dac_i2c_setup(void)
 
 	else if(KIND_ESS_DAC == ES9038Q2M)
 	{
+		// MCLK設定
+		i2cbuf[0] = 0x00; // Resister #0 System Resisters
+		i2cbuf[1] = 0x00; // 100MHz
+		i2c_write_blocking(I2C_PORT, I2C_ESS_DAC_ADDR >>1, i2cbuf, 2, true);
+		sleep_ms(1);
+
+		// 入力設定
+		//i2cbuf[0] = 0x01; // Resister #1 Input Selection
+		//i2cbuf[1] = 0xC0; // 32bit-I2S, autoSelect disabled, serial
+		//i2c_write_blocking(I2C_PORT, I2C_ESS_DAC_ADDR >>1, i2cbuf, 2, true);
+		//sleep_ms(1);
+
+		// ソフトスタート設定
+		i2cbuf[0] = 0x0E; // Resister #14 Soft Start Configuration
+		i2cbuf[1] = 0x8A; // 
+		i2c_write_blocking(I2C_PORT, I2C_ESS_DAC_ADDR >>1, i2cbuf, 2, true);
+		sleep_ms(1);
+
+		// volume1設定
+		i2cbuf[0] = 0x0F; // Resister #15 Volume Control
+		i2cbuf[1] = 0x00; // 
+		i2c_write_blocking(I2C_PORT, I2C_ESS_DAC_ADDR >>1, i2cbuf, 2, true);
+		sleep_ms(1);
+
+		// volume2設定
+		i2cbuf[0] = 0x10; // Resister #16 Volume Control
+		i2cbuf[1] = 0x00; // 
+		i2c_write_blocking(I2C_PORT, I2C_ESS_DAC_ADDR >>1, i2cbuf, 2, true);
+		sleep_ms(1);
+
 		if(!CORE0_UPSAMPLING_192K)
 		{
 			// 内蔵アップサンプリングを使用しない
-			i2cbuf[0] = 0x07; // Resister 7
-			i2cbuf[1] = 0x04; // bypass OSF
+			i2cbuf[0] = 0x07; // Resister #7
+			i2cbuf[1] = 0x08; // bypass OSF
 			i2c_write_blocking(I2C_PORT, I2C_ESS_DAC_ADDR >>1, i2cbuf, 2, true);
-			sleep_ms(10);
+			sleep_ms(1);
+
+			// 128fsモードにする
+			i2cbuf[0] = 0x0A; // Resister #10
+			i2cbuf[1] = 0x12; // enable 128fs-mode, lock_speed=5461FSL edges(default)
+			i2c_write_blocking(I2C_PORT, I2C_ESS_DAC_ADDR >>1, i2cbuf, 2, true);
+			sleep_ms(1);
 		}
 
 		// DPLLバンド幅設定(ジッタが多いので少し広めに)
 		i2cbuf[0] = 0x0C; // Resister 12
-		i2cbuf[1] = 0x00; // いったん無効化しておく TODO:有効化
+		i2cbuf[1] = 0xFA; // I2S:0xF, DSD:0xA(default)
 		i2c_write_blocking(I2C_PORT, I2C_ESS_DAC_ADDR >>1, i2cbuf, 2, true);
-		sleep_ms(10);		
+		sleep_ms(1);		
 	}
 
 	else if(KIND_ESS_DAC == ES9039Q2M)
