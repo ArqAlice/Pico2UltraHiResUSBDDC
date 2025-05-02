@@ -10,6 +10,7 @@
 #include "hardware/clocks.h"
 #include "hardware/i2c.h"
 #include "transmit_to_dac.h"
+#include "nonblocking_i2c.h"
 
 extern inline int32_t saturation_i32(int32_t in, int32_t max, int32_t min)
 {
@@ -169,6 +170,8 @@ void setup_I2C(void)
 	gpio_set_function(I2C_SCL, GPIO_FUNC_I2C);
 	gpio_pull_up(I2C_SDA);
 	gpio_pull_up(I2C_SCL);
+
+	i2c_dma_initialize(I2C_PORT);
 }
 
 void volume_control(void)

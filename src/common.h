@@ -18,7 +18,7 @@
 // User Configurable ------------------------------------------------------------------
 
 // Faster I2S slew rate
-#define I2S_SLEWRATE_FAST_ENABLE (false)
+#define I2S_SLEWRATE_FAST_ENABLE (true)
 
 // Enhancement I2S signal output current
 #define I2S_STRENGTH_REINFORCE_ENABLE (true)
@@ -26,8 +26,8 @@
 // Power Mode Switch Pin
 // The Hi-Power Mode outputs 1536kHz/1411.2kHz and is only supported by a limited number of DACs.
 #define POWER_MODE_SWITCH_PIN (0)
-#define ALWAYS_HIGH_POWER (true)
-#define ALWAYS_LOW_POWER (false)
+#define ALWAYS_HIGH_POWER (false)
+#define ALWAYS_LOW_POWER (true)
 
 // I2C
 #define I2C_PORT (i2c1)
@@ -48,6 +48,7 @@
 #define USE_ESS_DAC (true)
 #define KIND_ESS_DAC (ES9038Q2M)
 #define I2C_ESS_DAC_ADDR (ADDR0_ES9038Q2M)
+#define ENABLE_ES9038Q2M_DEPOP (false)
 #define DAC_ENABLE_PIN (5)
 
 // User Configurable end ------------------------------------------------------------

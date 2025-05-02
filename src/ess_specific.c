@@ -8,6 +8,10 @@
 #include "ess_specific.h"
 #include "hardware/i2c.h"
 #include "common.h"
+#include "stdbool.h"
+#include "nonblocking_i2c.h"
+
+static bool is_ess_dac_mute = false;
 
 // for ES9010K2M
 void ess_dac_i2c_setup(void)
@@ -138,4 +142,54 @@ void ess_dac_initialize(void)
 void ess_dac_activate(void)
 {
 	gpio_put(DAC_ENABLE_PIN, true);
+}
+
+
+bool get_ess_dac_mute(void)
+{
+	return is_ess_dac_mute;
+}
+
+void ess_dac_mute(void)
+{
+	uint8_t i2cbuf[2] = {0, 0};
+
+	if(KIND_ESS_DAC == ES9038Q2M && ENABLE_ES9038Q2M_DEPOP)
+	{
+		if(!CORE0_UPSAMPLING_192K)
+		{
+			i2cbuf[0] = 0x07; // Resister #7
+			i2cbuf[1] = 0x09; // bypass OSF, mute
+			i2c_write_dma(I2C_PORT, I2C_ESS_DAC_ADDR >>1, i2cbuf, 2, false);
+		}
+		else
+		{
+			i2cbuf[0] = 0x07; // Resister #7
+			i2cbuf[1] = 0x01; // mute
+			i2c_write_dma(I2C_PORT, I2C_ESS_DAC_ADDR >>1, i2cbuf, 2, false);
+		}
+	}
+	is_ess_dac_mute = true;
+}
+
+void ess_dac_unmute(void)
+{
+	uint8_t i2cbuf[2] = {0, 0};
+
+	if(KIND_ESS_DAC == ES9038Q2M && ENABLE_ES9038Q2M_DEPOP)
+	{
+		if(!CORE0_UPSAMPLING_192K)
+		{
+			i2cbuf[0] = 0x07; // Resister #7
+			i2cbuf[1] = 0x08; // bypass OSF
+			i2c_write_dma(I2C_PORT, I2C_ESS_DAC_ADDR >>1, i2cbuf, 2, false);
+		}
+		else
+		{
+			i2cbuf[0] = 0x07; // Resister #7
+			i2cbuf[1] = 0x00; // unmute
+			i2c_write_dma(I2C_PORT, I2C_ESS_DAC_ADDR >>1, i2cbuf, 2, false);
+		}
+	}
+	is_ess_dac_mute = false;
 }

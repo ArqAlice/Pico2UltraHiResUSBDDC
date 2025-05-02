@@ -553,8 +553,10 @@ static void audio_cmd_packet(struct usb_endpoint *ep)
 			case FEATURE_MUTE_CONTROL:
 			{
 				audio_state.mute = buffer->data[0];
-				if (audio_state.mute = true)
+				if (audio_state.mute == true)
 				{
+					//if(USE_ESS_DAC && KIND_ESS_DAC == ES9038Q2M)
+					//	ess_dac_mute();
 					clear_ringbuffer(&buffer_ep_Lch);
 					clear_ringbuffer(&buffer_ep_Rch);
 					clear_ringbuffer(&buffer_upsr_data_Lch_0);
@@ -578,6 +580,8 @@ static void audio_cmd_packet(struct usb_endpoint *ep)
 				if (audio_state.freq != new_freq)
 				{
 					audio_state.freq = new_freq;
+					if(USE_ESS_DAC && KIND_ESS_DAC == ES9038Q2M)
+						ess_dac_mute();
 					clear_ringbuffer(&buffer_ep_Lch);
 					clear_ringbuffer(&buffer_ep_Rch);
 					clear_ringbuffer(&buffer_upsr_data_Lch_0);

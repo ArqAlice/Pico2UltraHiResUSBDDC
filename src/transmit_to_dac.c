@@ -22,7 +22,7 @@ static dma_channel_config c_dma;
 static volatile bool dma_using_buffer_A = true;
 DMA_TX_STRUCTURE dma_tx;
 
-static bool enable_output = false;
+bool enable_output = false;
 static bool is_enabled_dma_tx_isr = false;
 
 // PWM
@@ -45,26 +45,29 @@ void reset_i2s_freq(void)
 
 void init_i2s_interface(void)
 {
-#if I2S_SLEWRATE_FAST_ENABLE == true
-    // PIO I2S用のGPIOを高速化する
-    gpio_set_slew_rate(I2S_DATA_PIN, GPIO_SLEW_RATE_FAST);
-    gpio_set_slew_rate(I2S_SIDESET_BASE + 1, GPIO_SLEW_RATE_FAST);
-    gpio_set_slew_rate(I2S_SIDESET_BASE + 2, GPIO_SLEW_RATE_FAST);
-#endif
+    if(I2S_SLEWRATE_FAST_ENABLE)
+    {
+        gpio_set_slew_rate(I2S_DATA_PIN, GPIO_SLEW_RATE_FAST);
+        gpio_set_slew_rate(I2S_SIDESET_BASE + 1, GPIO_SLEW_RATE_FAST);
+        gpio_set_slew_rate(I2S_SIDESET_BASE + 2, GPIO_SLEW_RATE_FAST);
+    }
 
-#if I2S_STRENGTH_REINFORCE_ENABLE == true
-    gpio_set_drive_strength(I2S_DATA_PIN, GPIO_DRIVE_STRENGTH_12MA);
-    gpio_set_drive_strength(I2S_SIDESET_BASE, GPIO_DRIVE_STRENGTH_12MA);
-    gpio_set_drive_strength(I2S_SIDESET_BASE + 1, GPIO_DRIVE_STRENGTH_12MA);
-#endif
+    if(I2S_STRENGTH_REINFORCE_ENABLE)
+    {
+        gpio_set_drive_strength(I2S_DATA_PIN, GPIO_DRIVE_STRENGTH_12MA);
+        gpio_set_drive_strength(I2S_SIDESET_BASE, GPIO_DRIVE_STRENGTH_12MA);
+        gpio_set_drive_strength(I2S_SIDESET_BASE + 1, GPIO_DRIVE_STRENGTH_12MA);
+    }
 
-#if I2S_SIDESET_CHANGE == true
     // PIO I2Sの初期化
-    I2S_32bit_inv_program_init(pio, sm, I2S_DATA_PIN, I2S_SIDESET_BASE, AUDIO_INITIAL_FREQ, &sm_config, &offset);
-#else
-    // PIO I2Sの初期化
-    I2S_32bit_program_init(pio, sm, I2S_DATA_PIN, I2S_SIDESET_BASE, AUDIO_INITIAL_FREQ, &sm_config, &offset);
-#endif
+    if(I2S_SIDESET_CHANGE)
+    {
+        I2S_32bit_inv_program_init(pio, sm, I2S_DATA_PIN, I2S_SIDESET_BASE, AUDIO_INITIAL_FREQ, &sm_config, &offset);
+    }
+    else
+    {
+        I2S_32bit_program_init(pio, sm, I2S_DATA_PIN, I2S_SIDESET_BASE, AUDIO_INITIAL_FREQ, &sm_config, &offset);
+    }
 
     reset_i2s_freq();
 
@@ -108,6 +111,10 @@ static float upsr_core1_Rch[SIZE_DMA_TX_BUF / 2];
 // 転送用バッファを静的確保
 static int32_t buffer_i2s_transmit[SIZE_DMA_TX_BUF];
 
+// 出力状態バッファ
+static volatile bool enable_output_prev = false;
+extern volatile absolute_time_t time_start_output;
+
 void __not_in_flash_func(dma_tx_start)(void)
 {
     int32_t length = get_size_using(&buffer_upsr_data_Lch_0);
@@ -119,6 +126,11 @@ void __not_in_flash_func(dma_tx_start)(void)
     // 入ってくるデータが枯渇したうえで、DMA送信バッファ内のすべてのデータを送信完了したら出力停止
     else if ((length <= 0) && (dma_tx.using == 0))
         enable_output = false;
+
+    // 出力開始した時間を取得
+    if(enable_output == true && enable_output_prev == false)
+        time_start_output = get_absolute_time();
+    enable_output_prev = enable_output;
 
     if (enable_output)
     {

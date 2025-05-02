@@ -48,10 +48,16 @@ RINGBUFFER buffer_upsr_data_Rch_0;
 AUDIO_STATE audio_state;
 uint32_t now_playing = 0;
 
+// 出力開始時間
+volatile absolute_time_t time_start_output;
+
 bool __not_in_flash_func(core0_timer_callback)(struct repeating_timer *t);
 
 // Core1メイン
 extern void core1_main();
+
+// ミュート解除タイミング確認用
+extern bool enable_output;
 
 void cancel_timer0(void)
 {
@@ -80,6 +86,8 @@ bool __not_in_flash_func(core0_timer_callback)(struct repeating_timer *t)
 			if (!is_high_power_mode)
 			{
 				is_high_power_mode = true;
+				if(USE_ESS_DAC && KIND_ESS_DAC == ES9038Q2M)
+					ess_dac_mute();
 				clear_ringbuffer(&buffer_ep_Lch);
 				clear_ringbuffer(&buffer_ep_Rch);
 				clear_ringbuffer(&buffer_upsr_data_Lch_0);
@@ -94,6 +102,8 @@ bool __not_in_flash_func(core0_timer_callback)(struct repeating_timer *t)
 			if (is_high_power_mode)
 			{
 				is_high_power_mode = false;
+				if(USE_ESS_DAC && KIND_ESS_DAC == ES9038Q2M)
+					ess_dac_mute();
 				clear_ringbuffer(&buffer_ep_Lch);
 				clear_ringbuffer(&buffer_ep_Rch);
 				clear_ringbuffer(&buffer_upsr_data_Lch_0);
@@ -107,18 +117,30 @@ bool __not_in_flash_func(core0_timer_callback)(struct repeating_timer *t)
 
 		volume_control();
 
-		// 再生停止時にアップサンプリングフラグとバッファをクリアする
-		if (now_playing == now_playing_old)
+		if(USE_ESS_DAC && KIND_ESS_DAC == ES9038Q2M && get_ess_dac_mute())
 		{
-			clear_ringbuffer(&buffer_ep_Lch);
-			clear_ringbuffer(&buffer_ep_Rch);
-			clear_ringbuffer(&buffer_upsr_data_Lch_0);
-			clear_ringbuffer(&buffer_upsr_data_Rch_0);
-			clear_bq_filter_delay();
-			renew_clock(is_high_power_mode);
-			now_playing = 0;
+			if(enable_output)
+			{
+				int64_t elapsed_us = absolute_time_diff_us(time_start_output, get_absolute_time());
+				if(elapsed_us > 10000)
+				{
+					ess_dac_unmute();
+				}
+			}
 		}
-		now_playing_old = now_playing;
+
+		// 再生停止時にアップサンプリングフラグとバッファをクリアする
+		//if (now_playing == now_playing_old)
+		//{
+		//	clear_ringbuffer(&buffer_ep_Lch);
+		//	clear_ringbuffer(&buffer_ep_Rch);
+		//	clear_ringbuffer(&buffer_upsr_data_Lch_0);
+		//	clear_ringbuffer(&buffer_upsr_data_Rch_0);
+		//	clear_bq_filter_delay();
+		//	renew_clock(is_high_power_mode);
+		//	now_playing = 0;
+		//}
+		//now_playing_old = now_playing;
 
 		count = 0;
 	}
@@ -155,6 +177,11 @@ int main(void)
 	// オンボードLED点灯用
 	gpio_init(ONBOARD_LED_PIN);
 	gpio_set_dir(ONBOARD_LED_PIN, GPIO_OUT);
+	gpio_put(ONBOARD_LED_PIN, true);
+
+	gpio_init(3);
+	gpio_set_dir(3, GPIO_OUT);
+	gpio_put(3, false);
 
 	// DACチップ制御用I2Cの初期化
 	setup_I2C();

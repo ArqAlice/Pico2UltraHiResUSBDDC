@@ -23,6 +23,7 @@ add_executable(Pico2UltraHiResUSBDDC
         ringbuffer.c
         debug_with_gpio.c
         ess_specific.c
+        nonblocking_i2c.c
         ${DSP_SRC}
 )
 
