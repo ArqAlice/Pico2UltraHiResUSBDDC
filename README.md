@@ -17,7 +17,7 @@ USB経由で入力された2ch PCMオーディオ信号に対し、高品質な�
 - USB Audio Class 1.0 準拠（OS標準ドライバで動作）
 - リアルタイム・FIR/IIRハイブリッドフィルタによる最大32倍アップサンプリング
 - 2ch ステレオ PCM 入力（16bit / 24bit）
-- 複数のDACチップと動作確認済（TI PCM5102, ESS ES9010K2M）
+- 複数のDACチップと動作確認済（TI PCM5102, ESS ES9038Q2M等）
 
 ---
 
@@ -48,7 +48,9 @@ USB経由で入力された2ch PCMオーディオ信号に対し、高品質な�
 
 - **TI PCM5102**
 - **ESS ES9010K2M**  
+- **ESS ES9038Q2M**
 - **ESS ES9039Q2M**
+
 その他、32bit I²S インターフェースをサポートする DAC チップで使用可能です。
 
 ---
@@ -121,7 +123,7 @@ DAC ENABLE(PCM5102では不要)
 
 ESS製DACにて使用する場合は、USE_ESS_DAC をtrueにしてください。  
 
-現在、動作確認済みのESS製DACは、ES9010K2MとES9039Q2Mの2種類になります。  
+現在、動作確認済みのESS製DACは、ES9010K2MとES9038Q2M、ES9039Q2Mの3種類になります。  
 
 「KIND_ESS_DAC」のdefineに使用するESS DACの名称を書いてください。  
 ES9010K2Mを使用する場合は、「ES9010K2M」、ES9039Q2Mを使用する場合は「ES9039Q2M」になります。  

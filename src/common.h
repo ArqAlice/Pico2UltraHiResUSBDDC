@@ -46,8 +46,9 @@
 
 // ESS DAC Specific
 #define USE_ESS_DAC (false)
-#define KIND_ESS_DAC (ES9010K2M)
-#define I2C_ESS_DAC_ADDR (ADDR0_ES9039Q2M)
+#define KIND_ESS_DAC (ESS_DAC_NONE)
+#define I2C_ESS_DAC_ADDR (ADDR0_NONE)
+#define ENABLE_ES9038Q2M_DEPOP (false)
 #define DAC_ENABLE_PIN (28)
 
 // User Configurable end ------------------------------------------------------------

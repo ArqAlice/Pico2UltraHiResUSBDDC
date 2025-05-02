@@ -66,6 +66,7 @@
         "i2s_pio_interface.h": "c",
         "upsampling.h": "c",
         "timer.h": "c",
-        "usb_device_control.h": "c"
+        "usb_device_control.h": "c",
+        "nonblocking_i2c.h": "c"
     }
 }
