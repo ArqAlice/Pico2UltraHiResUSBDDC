@@ -751,7 +751,7 @@ static void _as_audio_packet(struct usb_endpoint *ep)
 	// usb epデータコピー
 	length = usb_ep_data_acquire(audio_state.bit_depth, ep_in, length, ep_Lch, ep_Rch);
 
-	now_playing++; // この処理が来ているかどうかを確認するための変数
+	//now_playing++; // この処理が来ているかどうかを確認するための変数
 
 	ringbuf_write_array_no_spinlock(ep_Lch, length, &buffer_ep_Lch);
 	ringbuf_write_array_no_spinlock(ep_Rch, length, &buffer_ep_Rch);

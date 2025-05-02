@@ -17,6 +17,7 @@
 #define ES9039Q2M 3
 
 // ESS DAC Default ADDR
+#define ADDR0_NONE      0x00
 #define ADDR0_ES9010K2M 0x90
 #define ADDR0_ES9038Q2M 0x90
 #define ADDR0_ES9039Q2M 0x90

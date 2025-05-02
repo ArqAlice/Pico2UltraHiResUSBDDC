@@ -74,7 +74,20 @@ bool __not_in_flash_func(core0_timer_callback)(struct repeating_timer *t)
 {
 	can_proceed_upsampling_core0 = true;
 
-	volatile static uint32_t now_playing_old = 0;
+	// ES9038Q2Mの周波数切り替え時のノイズ対策
+	if(USE_ESS_DAC && KIND_ESS_DAC == ES9038Q2M && get_ess_dac_mute())
+	{
+		if(enable_output)
+		{
+			int64_t elapsed_us = absolute_time_diff_us(time_start_output, get_absolute_time());
+			if(elapsed_us > 40000)
+			{
+				ess_dac_unmute();
+			}
+		}
+	}
+
+	//volatile static uint32_t now_playing_old = 0;
 	static volatile int count = 0;
 	count++;
 	if (count >= MILLISEC50)
@@ -116,18 +129,6 @@ bool __not_in_flash_func(core0_timer_callback)(struct repeating_timer *t)
 		gpio_put(ONBOARD_LED_PIN, is_high_power_mode);
 
 		volume_control();
-
-		if(USE_ESS_DAC && KIND_ESS_DAC == ES9038Q2M && get_ess_dac_mute())
-		{
-			if(enable_output)
-			{
-				int64_t elapsed_us = absolute_time_diff_us(time_start_output, get_absolute_time());
-				if(elapsed_us > 10000)
-				{
-					ess_dac_unmute();
-				}
-			}
-		}
 
 		// 再生停止時にアップサンプリングフラグとバッファをクリアする
 		//if (now_playing == now_playing_old)
@@ -178,10 +179,6 @@ int main(void)
 	gpio_init(ONBOARD_LED_PIN);
 	gpio_set_dir(ONBOARD_LED_PIN, GPIO_OUT);
 	gpio_put(ONBOARD_LED_PIN, true);
-
-	gpio_init(3);
-	gpio_set_dir(3, GPIO_OUT);
-	gpio_put(3, false);
 
 	// DACチップ制御用I2Cの初期化
 	setup_I2C();
