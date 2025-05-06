@@ -51,6 +51,10 @@ uint32_t now_playing = 0;
 // 出力開始時間
 volatile absolute_time_t time_start_output;
 
+// 音量変更受信時間
+volatile bool volume_change = false;
+volatile absolute_time_t time_volume_change;
+
 bool __not_in_flash_func(core0_timer_callback)(struct repeating_timer *t);
 
 // Core1メイン
@@ -75,7 +79,7 @@ bool __not_in_flash_func(core0_timer_callback)(struct repeating_timer *t)
 	can_proceed_upsampling_core0 = true;
 
 	// ES9038Q2Mの周波数切り替え時のノイズ対策
-	if(USE_ESS_DAC && KIND_ESS_DAC == ES9038Q2M && get_ess_dac_mute())
+	if(!volume_change &&USE_ESS_DAC && KIND_ESS_DAC == ES9038Q2M && get_ess_dac_mute())
 	{
 		if(enable_output)
 		{
@@ -84,6 +88,17 @@ bool __not_in_flash_func(core0_timer_callback)(struct repeating_timer *t)
 			{
 				ess_dac_unmute();
 			}
+		}
+	}
+
+	// 音量切り替え時の一時ミュート処理
+	if(volume_change && USE_ESS_DAC && KIND_ESS_DAC == ES9038Q2M && get_ess_dac_mute())
+	{
+		int64_t elapsed_us = absolute_time_diff_us(time_volume_change, get_absolute_time());
+		if(elapsed_us > 10000)
+		{
+			ess_dac_unmute();
+			volume_change = false;
 		}
 	}
 

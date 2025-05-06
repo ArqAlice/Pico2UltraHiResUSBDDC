@@ -39,6 +39,9 @@ static char *descriptor_strings[] =
 
 #define ENDPOINT_FREQ_CONTROL (1u)
 
+extern volatile bool volume_change;
+extern volatile absolute_time_t time_volume_change;
+
 static void _as_audio_packet(struct usb_endpoint *ep);
 
 // USB descriptor for HiRes Audio
@@ -537,6 +540,13 @@ static struct audio_control_cmd
 static void audio_set_volume(int16_t volume)
 {
 	audio_state.acq_volume = volume;
+
+	if(volume_change == false && USE_ESS_DAC && KIND_ESS_DAC == ES9038Q2M)
+	{
+		volume_change = true;
+		time_volume_change = get_absolute_time();
+		ess_dac_mute();
+	}
 }
 
 static void audio_cmd_packet(struct usb_endpoint *ep)
