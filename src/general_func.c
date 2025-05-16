@@ -176,9 +176,8 @@ void setup_I2C(void)
 
 void volume_control(void)
 {
-	static float volume_slow = MIN_VOLUME;
+	//static float volume_slow = MIN_VOLUME;
+	//volume_slow += ((float)audio_state.acq_volume - volume_slow) * 0.85;
 
-	volume_slow += ((float)audio_state.acq_volume - volume_slow) * 0.85;
-
-	audio_state.vol_float = saturation_f32(pow(10, volume_slow / VOLUME_RESOLUTION / 10.0), 1.0, 0);
+	audio_state.vol_float = saturation_f32(pow(10, (float)audio_state.acq_volume / VOLUME_RESOLUTION / 10.0), 1.0, 0);
 }
