@@ -47,6 +47,8 @@ RINGBUFFER buffer_upsr_data_Rch_0;
 // Audio State
 AUDIO_STATE audio_state;
 uint32_t now_playing = 0;
+static uint32_t now_playing_old = 0;
+static bool is_cleared_buffer = false;
 
 // 出力開始時間
 volatile absolute_time_t time_start_output;
@@ -131,17 +133,22 @@ bool __not_in_flash_func(core0_timer_callback)(struct repeating_timer *t)
 		volume_control();
 
 		// 再生停止時にアップサンプリングフラグとバッファをクリアする
-		//if (now_playing == now_playing_old)
-		//{
-		//	clear_ringbuffer(&buffer_ep_Lch);
-		//	clear_ringbuffer(&buffer_ep_Rch);
-		//	clear_ringbuffer(&buffer_upsr_data_Lch_0);
-		//	clear_ringbuffer(&buffer_upsr_data_Rch_0);
-		//	clear_bq_filter_delay();
-		//	renew_clock(is_high_power_mode);
-		//	now_playing = 0;
-		//}
-		//now_playing_old = now_playing;
+		if ((now_playing == now_playing_old) && (!is_cleared_buffer))
+		{
+			clear_ringbuffer(&buffer_ep_Lch);
+			clear_ringbuffer(&buffer_ep_Rch);
+			clear_ringbuffer(&buffer_upsr_data_Lch_0);
+			clear_ringbuffer(&buffer_upsr_data_Rch_0);
+			clear_bq_filter_delay();
+			renew_clock(is_high_power_mode);
+			now_playing = 0;
+			is_cleared_buffer = true;
+		}
+		else if(now_playing != now_playing_old)
+		{
+			is_cleared_buffer = false;
+		}
+		now_playing_old = now_playing;
 
 		count = 0;
 	}
