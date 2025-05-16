@@ -472,7 +472,6 @@ static bool do_get_current(struct usb_setup_packet *setup)
 static bool do_get_minimum(struct usb_setup_packet *setup)
 {
 	//    usb_debug("AUDIO_REQ_GET_MIN\n");
-	puts("AUDIO_REQ_GET_MIN\n");
 
 	if ((setup->bmRequestType & USB_REQ_TYPE_RECIPIENT_MASK) == USB_REQ_TYPE_RECIPIENT_INTERFACE)
 	{
@@ -491,7 +490,6 @@ static bool do_get_minimum(struct usb_setup_packet *setup)
 static bool do_get_maximum(struct usb_setup_packet *setup)
 {
 	//    usb_debug("AUDIO_REQ_GET_MAX\n");
-	puts("AUDIO_REQ_GET_MAX\n");
 
 	if ((setup->bmRequestType & USB_REQ_TYPE_RECIPIENT_MASK) == USB_REQ_TYPE_RECIPIENT_INTERFACE)
 	{
@@ -510,7 +508,6 @@ static bool do_get_maximum(struct usb_setup_packet *setup)
 static bool do_get_resolution(struct usb_setup_packet *setup)
 {
 	//    usb_debug("AUDIO_REQ_GET_RES\n");
-	puts("AUDIO_REQ_GET_RES\n");
 
 	if ((setup->bmRequestType & USB_REQ_TYPE_RECIPIENT_MASK) == USB_REQ_TYPE_RECIPIENT_INTERFACE)
 	{
@@ -632,7 +629,6 @@ static bool do_set_current(struct usb_setup_packet *setup)
     usb_warn("AUDIO_REQ_SET_CUR\n");
 #endif
 #endif
-	puts("AUDIO_REQ_SET_CUR\n");
 
 	if (setup->wLength && setup->wLength < 64)
 	{
