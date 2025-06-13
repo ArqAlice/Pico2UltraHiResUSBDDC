@@ -51,6 +51,11 @@
 #define ENABLE_ES9038Q2M_DEPOP (false)
 #define DAC_ENABLE_PIN (28)
 
+// Other Function
+#define USE_INRUSH_CURRENT_REDUCER (false)
+#define INRUSH_CURRENT_REDUCER_PIN (3)
+#define INRUSH_CURRENT_REDUCER_TIME_US (1000)
+
 // User Configurable end ------------------------------------------------------------
 
 // システムクロック
