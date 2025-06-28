@@ -26,8 +26,8 @@
 // Power Mode Switch Pin
 // The Hi-Power Mode outputs 1536kHz/1411.2kHz and is only supported by a limited number of DACs.
 #define POWER_MODE_SWITCH_PIN (0)
-#define ALWAYS_HIGH_POWER (true)
-#define ALWAYS_LOW_POWER (false)
+#define ALWAYS_HIGH_POWER (false)
+#define ALWAYS_LOW_POWER (true)
 
 // I2C
 #define I2C_PORT (i2c1)
@@ -54,7 +54,7 @@
 // Other Function
 #define USE_INRUSH_CURRENT_REDUCER (true)
 #define INRUSH_CURRENT_REDUCER_PIN (3)
-#define INRUSH_CURRENT_REDUCER_TIME_US (1000)
+#define INRUSH_CURRENT_REDUCER_TIME_US (50000)
 
 // User Configurable end ------------------------------------------------------------
 

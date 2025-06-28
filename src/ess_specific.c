@@ -13,7 +13,6 @@
 
 static bool is_ess_dac_mute = false;
 
-// for ES9010K2M
 void ess_dac_i2c_setup(void)
 {
 	uint8_t i2cbuf[2] = {0, 0};
@@ -40,7 +39,7 @@ void ess_dac_i2c_setup(void)
 	{
 		// MCLK設定
 		i2cbuf[0] = 0x00; // Resister #0 System Resisters
-		i2cbuf[1] = 0x00; // 100MHz
+		i2cbuf[1] = 0x00; // 1/1
 		i2c_write_blocking(I2C_PORT, I2C_ESS_DAC_ADDR >>1, i2cbuf, 2, true);
 		sleep_ms(1);
 
@@ -70,18 +69,18 @@ void ess_dac_i2c_setup(void)
 			//i2c_write_blocking(I2C_PORT, I2C_ESS_DAC_ADDR >>1, i2cbuf, 2, true);
 			//sleep_ms(1);
 
-			// 128fsモードにする
-			i2cbuf[0] = 0x0A; // Resister #10
-			i2cbuf[1] = 0x12; // enable 128fs-mode, lock_speed=5461FSL edges(default)
-			i2c_write_blocking(I2C_PORT, I2C_ESS_DAC_ADDR >>1, i2cbuf, 2, true);
-			sleep_ms(1);
+			// 128fsモードにする(DPLLが無効になる, 100MHzのクロックを使用して高レートPCMを入力するときに使う)
+			//i2cbuf[0] = 0x0A; // Resister #10
+			//i2cbuf[1] = 0x12; // enable 128fs-mode, lock_speed=5461FSL edges(default)
+			//i2c_write_blocking(I2C_PORT, I2C_ESS_DAC_ADDR >>1, i2cbuf, 2, true);
+			//sleep_ms(1);
 		}
 
 		// DPLLバンド幅設定(ジッタが多いので少し広めに)
 		i2cbuf[0] = 0x0C; // Resister 12
-		i2cbuf[1] = 0xFA; // I2S:0xF, DSD:0xA(default)
+		i2cbuf[1] = 0xDA; // I2S:0xD, DSD:0xA(default)
 		i2c_write_blocking(I2C_PORT, I2C_ESS_DAC_ADDR >>1, i2cbuf, 2, true);
-		sleep_ms(1);		
+		sleep_ms(1);
 	}
 
 	else if(KIND_ESS_DAC == ES9039Q2M)

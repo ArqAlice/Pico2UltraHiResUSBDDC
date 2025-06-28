@@ -39,7 +39,6 @@ void i2c_dma_initialize(i2c_inst_t *i2c)
 
 void i2c_write_dma(i2c_inst_t *i2c, uint8_t addr_7bit, const uint8_t *data, size_t len, bool nostop)
 {
-    gpio_put(3, true);
     tx_length = len;
     if (len == 0 || data == NULL) return;
 
@@ -101,8 +100,6 @@ void i2c_write_dma(i2c_inst_t *i2c, uint8_t addr_7bit, const uint8_t *data, size
 
     // nostop means we are now at the end of a *message* but not the end of a *transfer*
     i2c->restart_on_next = nostop;
-
-    gpio_put(3, false);
 }
 
 void dma_i2c_tx_irq_handler(void)
