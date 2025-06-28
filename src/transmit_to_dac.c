@@ -48,8 +48,8 @@ void init_i2s_interface(void)
     if(I2S_SLEWRATE_FAST_ENABLE)
     {
         gpio_set_slew_rate(I2S_DATA_PIN, GPIO_SLEW_RATE_FAST);
+        gpio_set_slew_rate(I2S_SIDESET_BASE, GPIO_SLEW_RATE_FAST);
         gpio_set_slew_rate(I2S_SIDESET_BASE + 1, GPIO_SLEW_RATE_FAST);
-        gpio_set_slew_rate(I2S_SIDESET_BASE + 2, GPIO_SLEW_RATE_FAST);
     }
 
     if(I2S_STRENGTH_REINFORCE_ENABLE)

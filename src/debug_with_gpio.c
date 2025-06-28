@@ -32,7 +32,7 @@ extern void initialize_gpio_debugging(uint8_t gpio0, uint8_t gpio1, uint8_t gpio
 extern inline void gpio_toggle(uint8_t gpio)
 {
     if (gpio_get(gpio) == false)
-        gpio_put(2, true);
+        gpio_put(gpio, true);
     else
         (gpio_put(gpio, false));
 }

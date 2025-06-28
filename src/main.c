@@ -157,12 +157,21 @@ bool __not_in_flash_func(core0_timer_callback)(struct repeating_timer *t)
 
 int main(void)
 {
-	set_sys_clock_48mhz();
-	sleep_ms(2);
+	// 突入電流低減回路
+	if(USE_INRUSH_CURRENT_REDUCER)
+	{
+		gpio_init(INRUSH_CURRENT_REDUCER_PIN);
+		gpio_set_dir(INRUSH_CURRENT_REDUCER_PIN, GPIO_OUT);
+		gpio_put(INRUSH_CURRENT_REDUCER_PIN, false);
+		sleep_us(INRUSH_CURRENT_REDUCER_TIME_US);
+		gpio_put(INRUSH_CURRENT_REDUCER_PIN, true);
+	}
+
+	// 動作電圧とクロックを引き上げる
 	vreg_set_voltage(VREG_VOLTAGE_1_15);
 	sleep_ms(2);
 	set_sys_clock_khz(SYS_CLOCK_KHZ_44K, true);
-	sleep_ms(2);
+	sleep_us(1);
 
 	stdout_uart_init();
 
