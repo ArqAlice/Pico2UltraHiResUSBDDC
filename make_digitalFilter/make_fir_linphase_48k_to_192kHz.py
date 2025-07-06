@@ -38,7 +38,7 @@ def print_filter_params(param_, type):
         print('};')
     
     if type == 'iir':
-        print('\niir filter_coef[] = \n{', end='')
+        print('\niir_filter_coef[] = \n{', end='')
         for i in range(param.shape[0]):
             print('{', end='')
             for j in range(param.shape[1]):
@@ -55,7 +55,7 @@ def print_filter_params(param_, type):
 
     if type == 'fir':
             count = 0
-            print('\niir filter_coef[] = \n{', end='')
+            print('\nfir_filter_coef[] = \n{', end='')
             for i in range(param.shape[0]):
                 if i != param.shape[0] - 1:
                     print(param[i], end=', ')

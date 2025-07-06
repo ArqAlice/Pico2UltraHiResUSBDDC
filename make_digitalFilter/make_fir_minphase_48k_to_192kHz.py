@@ -7,13 +7,13 @@ from scipy import interpolate
 import matplotlib.pyplot as plt
 
 # フィルタの基本条件
-FS = 96000                  # アップサンプリング前の周波数[Hz]
-UPSAMPLING_RATIO = 2        # アップサンプリング倍率
+FS = 48000                  # アップサンプリング前の周波数[Hz]
+UPSAMPLING_RATIO = 4        # アップサンプリング倍率
 
 # フィルタのパラメータ
-N_TAP = 96                  # FIRフィルタのタップ数
-FIR_KAISER_WINDOW = 42000   # カイザー窓の大きさ
-FREQ_CUTOFF = 24000         # カットオフ周波数[Hz]
+N_TAP = 256                 # FIRフィルタのタップ数
+FIR_KAISER_WINDOW = 15000   # カイザー窓の大きさ
+FREQ_CUTOFF = 23520         # カットオフ周波数[Hz]
 
 # シミュレーション条件
 TIME_IMPULSE_SIMU = 0.0012  # インパルス応答解析時間[s]
@@ -38,7 +38,7 @@ def print_filter_params(param_, type):
         print('};')
     
     if type == 'iir':
-        print('\niir filter_coef[] = \n{', end='')
+        print('\niir_filter_coef[] = \n{', end='')
         for i in range(param.shape[0]):
             print('{', end='')
             for j in range(param.shape[1]):
@@ -55,7 +55,7 @@ def print_filter_params(param_, type):
 
     if type == 'fir':
             count = 0
-            print('\niir filter_coef[] = \n{', end='')
+            print('\nfir_filter_coef[] = \n{', end='')
             for i in range(param.shape[0]):
                 if i != param.shape[0] - 1:
                     print(param[i], end=', ')

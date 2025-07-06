@@ -8,13 +8,13 @@ import matplotlib.pyplot as plt
 
 # フィルタの基本条件
 FS = 384000             # アップサンプリング前の周波数[Hz]
-UPSAMPLING_RATIO = 4    # アップサンプリング倍率
+UPSAMPLING_RATIO = 2    # アップサンプリング倍率
 
 # フィルタのパラメータ
 WP = FS * 0.055         # 通過域遮断周波数[Hz]
-WS = FS * 0.57          # 阻止域遮断周波数[Hz]
+WS = FS * 0.5           # 阻止域遮断周波数[Hz]
 GPASS = 0.5             # 通過域最大損失量[dB]
-GSTOP = 140             # 阻止域最小減衰量[dB]
+GSTOP = 150             # 阻止域最小減衰量[dB]
 FTYPE = 'cheby2'        # フィルタタイプ(チェビシェフ2型)
 
 # シミュレーション条件
@@ -40,7 +40,7 @@ def print_filter_params(param_, type):
         print('};')
     
     if type == 'iir':
-        print('\niir filter_coef = \n{', end='')
+        print('\niir_filter_coef = \n{', end='')
         for i in range(param.shape[0]):
             print('{', end='')
             for j in range(param.shape[1]):
@@ -56,7 +56,7 @@ def print_filter_params(param_, type):
         print('};')
 
     if type == 'fir':
-            print('\niir filter_coef = \n{', end='')
+            print('\nfir_filter_coef = \n{', end='')
             for i in range(param.shape[0]):
                 if i != param.shape[0] - 1:
                     print(param[i], end=', ')
