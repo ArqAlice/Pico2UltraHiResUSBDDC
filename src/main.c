@@ -82,7 +82,7 @@ bool __not_in_flash_func(core0_timer_callback)(struct repeating_timer *t)
 		if(enable_output)
 		{
 			int64_t elapsed_us = absolute_time_diff_us(time_start_output, get_absolute_time());
-			if(elapsed_us > 40000)
+			if(elapsed_us > TIME_ES9038Q2M_DEPOP_USEC)
 			{
 				ess_dac_unmute();
 			}
@@ -168,7 +168,7 @@ int main(void)
 	}
 
 	// 動作電圧とクロックを引き上げる
-	vreg_set_voltage(VREG_VOLTAGE_1_15);
+	vreg_set_voltage(V_CORE_HI);
 	sleep_ms(2);
 	set_sys_clock_khz(SYS_CLOCK_KHZ_44K, true);
 	sleep_us(1);

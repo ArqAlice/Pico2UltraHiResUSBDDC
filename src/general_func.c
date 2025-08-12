@@ -112,7 +112,7 @@ void renew_cpu_clock(bool is_high_power)
 	case 48000:
 		if (is_high_power)
 		{
-			vreg_set_voltage(VREG_VOLTAGE_1_15);
+			vreg_set_voltage(V_CORE_HI);
 			busy_wait_us(100);
 			set_sys_clock_khz(SYS_CLOCK_KHZ_48K, true);
 		}
@@ -120,7 +120,7 @@ void renew_cpu_clock(bool is_high_power)
 		{
 			set_sys_clock_khz(SYS_CLOCK_KHZ_LP_48K, true);
 			busy_wait_us(100);
-			vreg_set_voltage(VREG_VOLTAGE_1_05);
+			vreg_set_voltage(V_CORE_LO);
 		}
 		break;
 	case 176400:
@@ -129,7 +129,7 @@ void renew_cpu_clock(bool is_high_power)
 	default:
 		if (is_high_power)
 		{
-			vreg_set_voltage(VREG_VOLTAGE_1_15);
+			vreg_set_voltage(V_CORE_HI);
 			busy_wait_us(100);
 			set_sys_clock_khz(SYS_CLOCK_KHZ_44K, true);
 		}
@@ -137,7 +137,7 @@ void renew_cpu_clock(bool is_high_power)
 		{
 			set_sys_clock_khz(SYS_CLOCK_KHZ_LP_44K, true);
 			busy_wait_us(100);
-			vreg_set_voltage(VREG_VOLTAGE_1_05);
+			vreg_set_voltage(V_CORE_LO);
 		}
 		break;
 	}
