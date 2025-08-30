@@ -60,7 +60,7 @@
 // User Configurable end ------------------------------------------------------------
 
 // システムクロック
-#define SYS_CLOCK_KHZ_44K (282000)
+#define SYS_CLOCK_KHZ_44K (307200)
 #define SYS_CLOCK_KHZ_48K (312000)
 #define SYS_CLOCK_KHZ_LP_44K (208800)
 #define SYS_CLOCK_KHZ_LP_48K (208800)
