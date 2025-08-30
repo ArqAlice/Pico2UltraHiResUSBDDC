@@ -17,6 +17,11 @@
 
 // User Configurable ------------------------------------------------------------------
 
+// String Desc.
+#define MFG_NAME ("ArqAlice")
+#define DEVICE_NAME ("Pico2 UltraHiRes USB-DDC")
+#define WEBSITE_ADDR ("y.tomi0131@gmail.com:")
+
 // Faster I2S slew rate
 #define I2S_SLEWRATE_FAST_ENABLE (false)
 
@@ -53,9 +58,9 @@
 #define DAC_ENABLE_PIN (28)
 
 // Other Function
-#define USE_INRUSH_CURRENT_REDUCER (false)
-#define INRUSH_CURRENT_REDUCER_PIN (3)
-#define INRUSH_CURRENT_REDUCER_TIME_US (50000)
+#define USE_EXT_POWER_ENABLE (false)
+#define EXT_POWER_ENABLE_PIN (3)
+#define EXT_POWER_ENABLE_WAIT_TIME_US (50000)
 
 // User Configurable end ------------------------------------------------------------
 
@@ -139,13 +144,6 @@ extern volatile bool is_high_power_mode;
 extern uint32_t now_playing;
 extern uint16_t length_remain_to_I2S_FIFO;
 
-extern inline int32_t saturation_i32(int32_t in, int32_t max, int32_t min);
-extern inline float saturation_f32(float in, float max, float min);
-extern inline void int32_to_float_array(int32_t *input, float *output, uint32_t length);
-extern inline void float_to_int32_array(float *input, int32_t *output, uint32_t length);
-extern inline uint16_t get_ratio_upsampling_core0(uint32_t freq);
-extern inline uint16_t get_ratio_upsampling_core1(void);
-inline uint16_t ratio_to_bitshift(uint16_t ratio);
 extern uint32_t calc_pwm_period_us(float period_us, uint16_t prescale);
 extern void setup_I2C(void);
 extern void volume_control(void);
@@ -153,5 +151,97 @@ extern void volume_control(void);
 extern void renew_clock(bool is_high_power);
 extern void cancel_timer0(void);
 extern void restart_timer0(void);
+
+inline int32_t saturation_i32(int32_t in, int32_t max, int32_t min)
+{
+	if (in > max)
+		return max;
+	else if (in < min)
+		return min;
+	return in;
+}
+
+inline float saturation_f32(float in, float max, float min)
+{
+	if (in > max)
+		return max;
+	else if (in < min)
+		return min;
+	return in;
+}
+
+// int32_t型をfloat型にまとめてキャスト
+inline void int32_to_float_array(int32_t *input, float *output, uint32_t length)
+{
+    for(int i=0; i<length; i++)
+        output[i] = (float)input[i];
+}
+
+// float型をint32_t型にまとめてキャスト
+inline void float_to_int32_array(float *input, int32_t *output, uint32_t length)
+{
+    for(int i=0; i<length; i++)
+        output[i] = (int32_t)input[i];
+}
+
+// アップサンプリング倍率をビットシフト量に変換する関数
+inline uint16_t ratio_to_bitshift(uint16_t ratio)
+{
+	switch (ratio)
+	{
+	case 2:
+		return 1;
+	case 4:
+		return 2;
+	case 8:
+		return 3;
+	default:
+		return 0;
+	}
+}
+
+// アップサンプリング倍率取得関数(Core0)
+inline uint16_t get_ratio_upsampling_core0(uint32_t freq)
+{
+	uint16_t ratio;
+	switch (freq)
+	{
+	case 192000:
+	case 176400:
+		ratio = RATIO_UPSAMPLING_192K;
+		break;
+	case 96000:
+	case 88200:
+		ratio = RATIO_UPSAMPLING_96K;
+		break;
+	case 48000:
+	case 44100:
+	default:
+		ratio = RATIO_UPSAMPLING_48K;
+		break;
+	}
+
+	if (!CORE0_UPSAMPLING_192K)
+		return ratio;
+	else
+		return ratio >> 1;
+}
+
+// アップサンプリング倍率取得関数(Core1)
+inline uint16_t get_ratio_upsampling_core1(void)
+{
+	if (is_high_power_mode && (!BYPASS_CORE1_UPSAMPLING) && (!CORE0_UPSAMPLING_192K))
+	{
+		return RATIO_UPSAMPLING_CORE1;
+	}
+	else if ((!BYPASS_CORE1_UPSAMPLING) && (!CORE0_UPSAMPLING_192K))
+	{
+		return RATIO_UPSAMPLING_CORE1 >> 1;
+	}
+	else // bypass Core1 upsampling
+	{
+		return 1;
+	}
+}
 
 #endif

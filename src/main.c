@@ -157,14 +157,14 @@ bool __not_in_flash_func(core0_timer_callback)(struct repeating_timer *t)
 
 int main(void)
 {
-	// 突入電流低減回路
-	if(USE_INRUSH_CURRENT_REDUCER)
+	// 外部電源有効化ピン
+	if(USE_EXT_POWER_ENABLE)
 	{
-		gpio_init(INRUSH_CURRENT_REDUCER_PIN);
-		gpio_set_dir(INRUSH_CURRENT_REDUCER_PIN, GPIO_OUT);
-		gpio_put(INRUSH_CURRENT_REDUCER_PIN, false);
-		sleep_us(INRUSH_CURRENT_REDUCER_TIME_US);
-		gpio_put(INRUSH_CURRENT_REDUCER_PIN, true);
+		gpio_init(EXT_POWER_ENABLE_PIN);
+		gpio_set_dir(EXT_POWER_ENABLE_PIN, GPIO_OUT);
+		gpio_put(EXT_POWER_ENABLE_PIN, false);
+		sleep_us(EXT_POWER_ENABLE_WAIT_TIME_US);
+		gpio_put(EXT_POWER_ENABLE_PIN, true);
 	}
 
 	// 動作電圧とクロックを引き上げる
