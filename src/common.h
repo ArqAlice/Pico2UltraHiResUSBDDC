@@ -49,6 +49,7 @@
 #define KIND_ESS_DAC (ESS_DAC_NONE)
 #define I2C_ESS_DAC_ADDR (ADDR0_NONE)
 #define ENABLE_ES9038Q2M_DEPOP (false)
+#define TIME_ES9038Q2M_DEPOP_USEC (40000)
 #define DAC_ENABLE_PIN (28)
 
 // Other Function
@@ -59,12 +60,16 @@
 // User Configurable end ------------------------------------------------------------
 
 // システムクロック
-#define SYS_CLOCK_KHZ_44K (283200)
-#define SYS_CLOCK_KHZ_48K (307200)
+#define SYS_CLOCK_KHZ_44K (307200)
+#define SYS_CLOCK_KHZ_48K (312000)
 #define SYS_CLOCK_KHZ_LP_44K (208800)
 #define SYS_CLOCK_KHZ_LP_48K (208800)
 // #define SYS_CLOCK_KHZ 208800 //  208M8/48k/64 = 67.968->68, 208M8/44k1/64 = 73.979->74
 // #define SYS_CLOCK_KHZ 150000
+
+// Core Voltage
+#define V_CORE_HI VREG_VOLTAGE_1_25
+#define V_CORE_LO VREG_VOLTAGE_1_05
 
 // 初期オーディオサンプル周波数
 #define AUDIO_INITIAL_FREQ (44100)
