@@ -25,12 +25,14 @@ void renew_cpu_clock(bool is_high_power)
 			vreg_set_voltage(V_CORE_HI);
 			busy_wait_us(100);
 			set_sys_clock_khz(SYS_CLOCK_KHZ_48K, true);
+			busy_wait_us(50);
 		}
 		else
 		{
 			set_sys_clock_khz(SYS_CLOCK_KHZ_LP_48K, true);
 			busy_wait_us(100);
 			vreg_set_voltage(V_CORE_LO);
+			busy_wait_us(50);
 		}
 		break;
 	case 176400:
@@ -42,12 +44,14 @@ void renew_cpu_clock(bool is_high_power)
 			vreg_set_voltage(V_CORE_HI);
 			busy_wait_us(100);
 			set_sys_clock_khz(SYS_CLOCK_KHZ_44K, true);
+			busy_wait_us(50);
 		}
 		else
 		{
 			set_sys_clock_khz(SYS_CLOCK_KHZ_LP_44K, true);
 			busy_wait_us(100);
 			vreg_set_voltage(V_CORE_LO);
+			busy_wait_us(50);
 		}
 		break;
 	}

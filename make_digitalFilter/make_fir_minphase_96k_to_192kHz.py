@@ -97,7 +97,7 @@ y = signal.lfilter(b1_min, 1.0, x)
 w, h = signal.freqz(b1_min, 1.0, fs=FS * UPSAMPLING_RATIO)
 
 amp_dB = 20 * np.log10(np.abs(h))
-angles = np.unwrap(np.angle(h))
+angles = np.degrees(np.unwrap(np.angle(h)))
 freq = w
 
 # Figureを作成する(インパルス応答)
