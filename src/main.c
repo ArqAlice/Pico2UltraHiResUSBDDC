@@ -163,8 +163,12 @@ int main(void)
 		gpio_init(EXT_POWER_ENABLE_PIN);
 		gpio_set_dir(EXT_POWER_ENABLE_PIN, GPIO_OUT);
 		gpio_put(EXT_POWER_ENABLE_PIN, false);
-		sleep_us(EXT_POWER_ENABLE_WAIT_TIME_US);
+		sleep_us(BOOT_WAIT_TIME_US);
 		gpio_put(EXT_POWER_ENABLE_PIN, true);
+	}
+	else
+	{
+		sleep_us(BOOT_WAIT_TIME_US);
 	}
 
 	// 動作電圧とクロックを引き上げる

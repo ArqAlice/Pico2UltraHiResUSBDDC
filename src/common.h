@@ -58,15 +58,15 @@
 #define DAC_ENABLE_PIN (5)
 
 // Other Function
-#define USE_EXT_POWER_ENABLE (true)
+#define USE_EXT_POWER_ENABLE (false)
 #define EXT_POWER_ENABLE_PIN (3)
-#define EXT_POWER_ENABLE_WAIT_TIME_US (50000)
+#define BOOT_WAIT_TIME_US (50000)
 
 // User Configurable end ------------------------------------------------------------
 
 // システムクロック
-#define SYS_CLOCK_KHZ_44K (307200)
-#define SYS_CLOCK_KHZ_48K (312000)
+#define SYS_CLOCK_KHZ_44K (282000)
+#define SYS_CLOCK_KHZ_48K (307200)
 #define SYS_CLOCK_KHZ_LP_44K (208800)
 #define SYS_CLOCK_KHZ_LP_48K (208800)
 // #define SYS_CLOCK_KHZ 208800 //  208M8/48k/64 = 67.968->68, 208M8/44k1/64 = 73.979->74
