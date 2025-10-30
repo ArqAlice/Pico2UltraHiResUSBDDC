@@ -64,12 +64,11 @@ extern const float coef_bq_filter_2x_3[SIZE_BQ_FILTER_3][NUM_OF_BQ_SUB_PARAMS];
 extern const float coef_bq_filter_4x_0[SIZE_BQ_FILTER_4][NUM_OF_BQ_SUB_PARAMS];
 
 extern const float coef_fir_filter_4x_0[SIZE_FIR_FILTER_0];
+extern const float coef_fir_filter_4x_0_linear[SIZE_FIR_FILTER_0];
 extern const uint32_t size_coef_fir_filter_4x_0;
 extern const float coef_fir_filter_2x_1[SIZE_FIR_FILTER_1];
+extern const float coef_fir_filter_2x_1_linear[SIZE_FIR_FILTER_1];
 extern const uint32_t size_coef_fir_filter_2x_1;
-extern const float coef_fir_filter_2x_2[SIZE_FIR_FILTER_2];
-extern const uint32_t size_coef_fir_filter_2x_2;
-
 
 extern void init_upsampling_filter(void);
 extern void clear_bq_filter_delay(void);

@@ -22,6 +22,9 @@
 #define DEVICE_NAME ("Pico2 UltraHiRes USB-DDC")
 #define WEBSITE_ADDR ("y.tomi0131@gmail.com:")
 
+// FIR Filter Type: LINEAR or MINIMUM
+#define LINEAR
+
 // Faster I2S slew rate
 #define I2S_SLEWRATE_FAST_ENABLE (true)
 

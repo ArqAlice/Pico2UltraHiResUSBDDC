@@ -15,6 +15,15 @@
 #define ARM_FIR_BLOCKSIZE_1 SIZE_EP_BUFFER *RATIO_UPSAMPLING_48K / 2
 #define ARM_FIR_BLOCKSIZE_2 SIZE_EP_BUFFER *RATIO_UPSAMPLING_48K
 
+// Filter Type
+#ifdef LINEAR
+#define COEF_4X_FIR coef_fir_filter_4x_0_linear
+#define COEF_2X_FIR coef_fir_filter_2x_1_linear
+#else
+#define COEF_4X_FIR coef_fir_filter_4x_0
+#define COEF_2X_FIR coef_fir_filter_2x_1
+#endif
+
 // 双二次フィルタ構造体
 static arm_biquad_casd_df1_inst_f32 biquad_filter2L;
 static arm_biquad_casd_df1_inst_f32 biquad_filter2R;
@@ -112,10 +121,10 @@ static void initialize_bq_filter_coef(void)
         biquad4_coeffs,
         biquad4R_state);
 
-    arm_fir_interpolate_init_f32(&fir_filter4x0L, 4, size_coef_fir_filter_4x_0, coef_fir_filter_4x_0, fir4x0L_state, ARM_FIR_BLOCKSIZE_0);
-    arm_fir_interpolate_init_f32(&fir_filter4x0R, 4, size_coef_fir_filter_4x_0, coef_fir_filter_4x_0, fir4x0R_state, ARM_FIR_BLOCKSIZE_0);
-    arm_fir_interpolate_init_f32(&fir_filter2x1L, 2, size_coef_fir_filter_2x_1, coef_fir_filter_2x_1, fir2x1L_state, ARM_FIR_BLOCKSIZE_1);
-    arm_fir_interpolate_init_f32(&fir_filter2x1R, 2, size_coef_fir_filter_2x_1, coef_fir_filter_2x_1, fir2x1R_state, ARM_FIR_BLOCKSIZE_1);
+    arm_fir_interpolate_init_f32(&fir_filter4x0L, 4, size_coef_fir_filter_4x_0, COEF_4X_FIR, fir4x0L_state, ARM_FIR_BLOCKSIZE_0);
+    arm_fir_interpolate_init_f32(&fir_filter4x0R, 4, size_coef_fir_filter_4x_0, COEF_4X_FIR, fir4x0R_state, ARM_FIR_BLOCKSIZE_0);
+    arm_fir_interpolate_init_f32(&fir_filter2x1L, 2, size_coef_fir_filter_2x_1, COEF_2X_FIR, fir2x1L_state, ARM_FIR_BLOCKSIZE_1);
+    arm_fir_interpolate_init_f32(&fir_filter2x1R, 2, size_coef_fir_filter_2x_1, COEF_2X_FIR, fir2x1R_state, ARM_FIR_BLOCKSIZE_1);
 }
 
 // アップサンプリングフィルタの初期化処理
