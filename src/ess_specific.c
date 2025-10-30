@@ -76,9 +76,15 @@ void ess_dac_i2c_setup(void)
 			//sleep_ms(1);
 		}
 
-		// DPLLバンド幅設定(ジッタが多いので少し広めに)
+		// DPLLバンド幅設定
 		i2cbuf[0] = 0x0C; // Resister 12
-		i2cbuf[1] = 0xEA; // I2S:0xE, DSD:0xA(default)
+		i2cbuf[1] = 0xAA; // I2S:0xB, DSD:0xA(default)
+		i2c_write_blocking(I2C_PORT, I2C_ESS_DAC_ADDR >>1, i2cbuf, 2, true);
+		sleep_ms(1);
+
+		// PLL LOCK SPEED
+		i2cbuf[0] = 0x0A; // Resister 10
+		i2cbuf[1] = 0x00; // lock speed :0x0(16384FSL Edges)
 		i2c_write_blocking(I2C_PORT, I2C_ESS_DAC_ADDR >>1, i2cbuf, 2, true);
 		sleep_ms(1);
 	}

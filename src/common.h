@@ -31,8 +31,8 @@
 // Power Mode Switch Pin
 // The Hi-Power Mode outputs 1536kHz/1411.2kHz and is only supported by a limited number of DACs.
 #define POWER_MODE_SWITCH_PIN (0)
-#define ALWAYS_HIGH_POWER (true)
-#define ALWAYS_LOW_POWER (false)
+#define ALWAYS_HIGH_POWER (false)
+#define ALWAYS_LOW_POWER (true)
 
 // I2C
 #define I2C_PORT (i2c1)
