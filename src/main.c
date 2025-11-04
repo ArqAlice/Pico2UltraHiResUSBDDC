@@ -179,6 +179,13 @@ int main(void)
 
 	stdout_uart_init();
 
+	// テストモード用ピンを有効化
+	if(TEST_MODE)
+	{
+		gpio_init(TEST_PIN1);
+		gpio_set_dir(TEST_PIN1, GPIO_OUT);
+	}
+
 	// 各種バッファ初期化
 	initialize_ringbuffer(SIZE_EP_BUFFER, true, &buffer_ep_Lch);				// USB EP受け取り用
 	initialize_ringbuffer(SIZE_EP_BUFFER, true, &buffer_ep_Rch);				// USB EP受け取り用
@@ -247,7 +254,10 @@ int main(void)
 		if (can_proceed_upsampling_core0)
 		{
 			can_proceed_upsampling_core0 = false;
+
+			if(TEST_MODE) gpio_put(TEST_PIN1, true);
 			upsampling_process_core0();
+			if(TEST_MODE) gpio_put(TEST_PIN1, false);
 		}
 		sleep_us(1);
 	}

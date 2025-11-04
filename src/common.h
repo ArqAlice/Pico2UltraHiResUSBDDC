@@ -17,6 +17,10 @@
 
 // User Configurable ------------------------------------------------------------------
 
+// Test mode
+#define TEST_MODE (true)
+#define TEST_PIN1 (1)
+
 // String Desc.
 #define MFG_NAME ("ArqAlice")
 #define DEVICE_NAME ("Pico2 UltraHiRes USB-DDC")
@@ -48,7 +52,7 @@
 #define I2S_SIDESET_BASE (27)
 
 // Upsampler control
-#define BYPASS_CORE1_UPSAMPLING (true)
+#define BYPASS_CORE1_UPSAMPLING (false)
 #define CORE0_UPSAMPLING_192K (true)
 #define DEFAULT_GAIN_RATIO (0.72) // Adjust this according to your filter to avoid clipping.
 
