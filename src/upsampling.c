@@ -246,8 +246,6 @@ static uint32_t __not_in_flash_func(fast_BQ_filter_4x_0)(uint32_t length, float 
 // アップサンプリングに使用するメモリを静的確保
 static int32_t buffer_copy_from_ep_left_ch[SIZE_EP_BUFFER];
 static int32_t buffer_copy_from_ep_right_ch[SIZE_EP_BUFFER];
-static float buffer_from_ep_Lch_float[SIZE_EP_BUFFER];
-static float buffer_from_ep_Rch_float[SIZE_EP_BUFFER];
 static float upsample_buffer_0_L[SIZE_EP_BUFFER * RATIO_UPSAMPLING_48K];
 static float upsample_buffer_1_L[SIZE_EP_BUFFER * RATIO_UPSAMPLING_48K];
 static float upsample_buffer_0_R[SIZE_EP_BUFFER * RATIO_UPSAMPLING_48K];
@@ -287,20 +285,17 @@ void __not_in_flash_func(upsampling_process_core0)(void)
             ringbuf_read_array_no_spinlock(buffer_copy_from_ep_right_ch, length, &buffer_ep_Rch);
             restore_interrupts(save);
 
-            int32_to_float_array(buffer_copy_from_ep_left_ch, buffer_from_ep_Lch_float, length);
-            int32_to_float_array(buffer_copy_from_ep_right_ch, buffer_from_ep_Rch_float, length);
-
             if (!CORE0_UPSAMPLING_192K)
             {
-                len_L = fast_BQ_filter_2x_2(length, buffer_from_ep_Lch_float, upsample_buffer_0_L, &biquad_filter2L);
-                len_R = fast_BQ_filter_2x_2(length, buffer_from_ep_Rch_float, upsample_buffer_0_R, &biquad_filter2R);
+                len_L = fast_BQ_filter_2x_2(length, (float*)buffer_copy_from_ep_left_ch, upsample_buffer_0_L, &biquad_filter2L);
+                len_R = fast_BQ_filter_2x_2(length, (float*)buffer_copy_from_ep_right_ch, upsample_buffer_0_R, &biquad_filter2R);
             }
             else
             {
                 len_L = length;
                 len_R = length;
-                memcpy(buffer_from_ep_Lch_float, upsample_buffer_0_L, sizeof(float) * length);
-                memcpy(buffer_from_ep_Rch_float, upsample_buffer_0_R, sizeof(float) * length);
+                memcpy(buffer_copy_from_ep_left_ch, upsample_buffer_0_L, sizeof(float) * length);
+                memcpy(buffer_copy_from_ep_right_ch, upsample_buffer_0_R, sizeof(float) * length);
             }
 
             save = save_and_disable_interrupts();
@@ -323,25 +318,18 @@ void __not_in_flash_func(upsampling_process_core0)(void)
             ringbuf_read_array_no_spinlock(buffer_copy_from_ep_right_ch, length, &buffer_ep_Rch);
             restore_interrupts(save);
 
-            int32_to_float_array(buffer_copy_from_ep_left_ch, buffer_from_ep_Lch_float, length);
-            int32_to_float_array(buffer_copy_from_ep_right_ch, buffer_from_ep_Rch_float, length);
-
-            // FIR補間で振幅が小さくなるためあらかじめ大きくしておく
-            arm_scale_f32(buffer_from_ep_Lch_float, DEFAULT_GAIN_RATIO * 2., buffer_from_ep_Lch_float, length);
-            arm_scale_f32(buffer_from_ep_Rch_float, DEFAULT_GAIN_RATIO * 2., buffer_from_ep_Rch_float, length);
-
             if (!CORE0_UPSAMPLING_192K)
             {
-                len_L = FIR_filter_2x(length, buffer_from_ep_Lch_float, upsample_buffer_0_L, &fir_filter2x1L);
+                len_L = FIR_filter_2x(length, (float*)buffer_copy_from_ep_left_ch, upsample_buffer_0_L, &fir_filter2x1L);
                 len_L = fast_BQ_filter_2x_2(len_L, upsample_buffer_0_L, upsample_buffer_1_L, &biquad_filter2L);
 
-                len_R = FIR_filter_2x(length, buffer_from_ep_Rch_float, upsample_buffer_0_R, &fir_filter2x1R);
+                len_R = FIR_filter_2x(length, (float*)buffer_copy_from_ep_right_ch, upsample_buffer_0_R, &fir_filter2x1R);
                 len_R = fast_BQ_filter_2x_2(len_R, upsample_buffer_0_R, upsample_buffer_1_R, &biquad_filter2R);
             }
             else
             {
-                len_L = FIR_filter_2x(length, buffer_from_ep_Lch_float, upsample_buffer_1_L, &fir_filter2x1L);
-                len_R = FIR_filter_2x(length, buffer_from_ep_Rch_float, upsample_buffer_1_R, &fir_filter2x1R);
+                len_L = FIR_filter_2x(length, (float*)buffer_copy_from_ep_left_ch, upsample_buffer_1_L, &fir_filter2x1L);
+                len_R = FIR_filter_2x(length, (float*)buffer_copy_from_ep_right_ch, upsample_buffer_1_R, &fir_filter2x1R);
             }
 
             save = save_and_disable_interrupts();
@@ -364,15 +352,8 @@ void __not_in_flash_func(upsampling_process_core0)(void)
             ringbuf_read_array_no_spinlock(buffer_copy_from_ep_right_ch, length, &buffer_ep_Rch);
             restore_interrupts(save);
 
-            int32_to_float_array(buffer_copy_from_ep_left_ch, buffer_from_ep_Lch_float, length);
-            int32_to_float_array(buffer_copy_from_ep_right_ch, buffer_from_ep_Rch_float, length);
-
-            // FIR補間で振幅が小さくなるためあらかじめ大きくしておく
-            arm_scale_f32(buffer_from_ep_Lch_float, DEFAULT_GAIN_RATIO * 4., buffer_from_ep_Lch_float, length);
-            arm_scale_f32(buffer_from_ep_Rch_float, DEFAULT_GAIN_RATIO * 4., buffer_from_ep_Rch_float, length);
-
-            len_L = FIR_filter_4x(length, buffer_from_ep_Lch_float, upsample_buffer_1_L, &fir_filter4x0L);
-            len_R = FIR_filter_4x(length, buffer_from_ep_Rch_float, upsample_buffer_1_R, &fir_filter4x0R);
+            len_L = FIR_filter_4x(length, (float*)buffer_copy_from_ep_left_ch, upsample_buffer_1_L, &fir_filter4x0L);
+            len_R = FIR_filter_4x(length, (float*)buffer_copy_from_ep_right_ch, upsample_buffer_1_R, &fir_filter4x0R);
 
             if (!CORE0_UPSAMPLING_192K)
             {

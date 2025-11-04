@@ -8,6 +8,7 @@
 #include "usb_device_control.h"
 #include "pico/usb_device.h"
 #include "lufa/AudioClassCommon.h"
+#include <arm_math.h>
 #include "common.h"
 #include "upsampling.h"
 
@@ -343,7 +344,7 @@ uint16_t buffer_length_limiter(uint32_t freq, uint16_t length)
 
 // USB EPバッファ取得処理
 uint16_t __not_in_flash_func(usb_ep_data_acquire)(uint bit_depth, int16_t *ep, uint in_length,
-												  int32_t *buf_left_ch, int32_t *buf_right_ch)
+												  float *buf_left_ch, float *buf_right_ch)
 {
 	uint sample_num;
 	uint16_t *u16_ep = (uint16_t *)ep; // 24bitデータ処理のため int16_t -> uint16_t 型に変更
@@ -360,9 +361,9 @@ uint16_t __not_in_flash_func(usb_ep_data_acquire)(uint bit_depth, int16_t *ep, u
 		while (sample_num--)
 		{
 			data = ((int32_t)(*u16_ep++) | ((int32_t)*u16_ep++ << 16)) >> 0;
-			buf_left_ch[count] = (int32_t)((float)data * audio_state.vol_float);
+			buf_left_ch[count] = (float)data;
 			data = ((int32_t)(*u16_ep++) | ((int32_t)*u16_ep++ << 16)) >> 0;
-			buf_right_ch[count] = (int32_t)((float)data * audio_state.vol_float);
+			buf_right_ch[count] = (float)data;
 			count++;
 		}
 		break;
@@ -374,9 +375,9 @@ uint16_t __not_in_flash_func(usb_ep_data_acquire)(uint bit_depth, int16_t *ep, u
 		while (sample_num--)
 		{
 			data = ((int32_t)(*u16_ep++ << 8) | ((int32_t)*u16_ep << 24)) >> 0;
-			buf_left_ch[count] = (int32_t)((float)data * audio_state.vol_float);
+			buf_left_ch[count] = (float)data;
 			data = ((int32_t)(*u16_ep++ & 0xff00) | ((int32_t)*u16_ep++ << 16)) >> 0;
-			buf_right_ch[count] = (int32_t)((float)data * audio_state.vol_float);
+			buf_right_ch[count] = (float)data;
 			count++;
 		}
 		break;
@@ -389,9 +390,9 @@ uint16_t __not_in_flash_func(usb_ep_data_acquire)(uint bit_depth, int16_t *ep, u
 		while (sample_num--)
 		{
 			data = ((int32_t)*ep++) << 16;
-			buf_left_ch[count] = (int32_t)((float)data * audio_state.vol_float);
+			buf_left_ch[count] = (float)data;
 			data = ((int32_t)*ep++) << 16;
-			buf_right_ch[count] = (int32_t)((float)data * audio_state.vol_float);
+			buf_right_ch[count] = (float)data;
 			count++;
 		}
 		break;
@@ -738,16 +739,62 @@ static void _as_audio_packet(struct usb_endpoint *ep)
 	// ※uint8データ長をint16データ長(1/2)に変換
 	uint length = (usb_buffer->data_len) >> 1;
 
-	int32_t ep_Lch[SIZE_EP_BUFFER];
-	int32_t ep_Rch[SIZE_EP_BUFFER];
+	float ep_Lch[SIZE_EP_BUFFER];
+	float ep_Rch[SIZE_EP_BUFFER];
 
 	// usb epデータコピー
 	length = usb_ep_data_acquire(audio_state.bit_depth, ep_in, length, ep_Lch, ep_Rch);
 
 	now_playing++; // この処理が来ているかどうかを確認するための変数
+	
+	switch(audio_state.freq)
+	{
+		case 192000:
+		case 176400:
+			if (!CORE0_UPSAMPLING_192K)
+			{
+				arm_scale_f32(ep_Lch, audio_state.vol_float * DEFAULT_GAIN_RATIO, ep_Lch, length);
+				arm_scale_f32(ep_Rch, audio_state.vol_float * DEFAULT_GAIN_RATIO, ep_Rch, length);
+			}
+			else
+			{
+				arm_scale_f32(ep_Lch, audio_state.vol_float * DEFAULT_GAIN_RATIO, ep_Lch, length);
+				arm_scale_f32(ep_Rch, audio_state.vol_float * DEFAULT_GAIN_RATIO, ep_Rch, length);
+			}
+			break;
 
-	ringbuf_write_array_no_spinlock(ep_Lch, length, &buffer_ep_Lch);
-	ringbuf_write_array_no_spinlock(ep_Rch, length, &buffer_ep_Rch);
+		case 96000:
+		case 88200:
+			if (!CORE0_UPSAMPLING_192K)
+			{
+				arm_scale_f32(ep_Lch, audio_state.vol_float * DEFAULT_GAIN_RATIO * 2., ep_Lch, length);
+				arm_scale_f32(ep_Rch, audio_state.vol_float * DEFAULT_GAIN_RATIO * 2., ep_Rch, length);
+			}
+			else
+			{
+				arm_scale_f32(ep_Lch, audio_state.vol_float * DEFAULT_GAIN_RATIO * 2., ep_Lch, length);
+				arm_scale_f32(ep_Rch, audio_state.vol_float * DEFAULT_GAIN_RATIO * 2., ep_Rch, length);
+			}
+			break;
+
+		case 48000:
+		case 44100:
+		default:
+			if (!CORE0_UPSAMPLING_192K)
+			{
+				arm_scale_f32(ep_Lch, audio_state.vol_float * DEFAULT_GAIN_RATIO * 4., ep_Lch, length);
+				arm_scale_f32(ep_Rch, audio_state.vol_float * DEFAULT_GAIN_RATIO * 4., ep_Rch, length);
+			}
+			else
+			{
+				arm_scale_f32(ep_Lch, audio_state.vol_float * DEFAULT_GAIN_RATIO * 4., ep_Lch, length);
+				arm_scale_f32(ep_Rch, audio_state.vol_float * DEFAULT_GAIN_RATIO * 4., ep_Rch, length);
+			}
+			break;
+	}
+
+	ringbuf_write_array_no_spinlock((int32_t*)ep_Lch, length, &buffer_ep_Lch);
+	ringbuf_write_array_no_spinlock((int32_t*)ep_Rch, length, &buffer_ep_Rch);
 
 	// usb epデータコピー完了処理
 	usb_grow_transfer(ep->current_transfer, 1);

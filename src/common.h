@@ -35,7 +35,7 @@
 // The Hi-Power Mode outputs 1536kHz/1411.2kHz and is only supported by a limited number of DACs.
 #define POWER_MODE_SWITCH_PIN (0)
 #define ALWAYS_HIGH_POWER (false)
-#define ALWAYS_LOW_POWER (true)
+#define ALWAYS_LOW_POWER (false)
 
 // I2C
 #define I2C_PORT (i2c1)
@@ -48,9 +48,9 @@
 #define I2S_SIDESET_BASE (27)
 
 // Upsampler control
-#define BYPASS_CORE1_UPSAMPLING (false)
-#define CORE0_UPSAMPLING_192K (false)
-#define DEFAULT_GAIN_RATIO (0.6) // Adjust this according to your filter to avoid clipping.
+#define BYPASS_CORE1_UPSAMPLING (true)
+#define CORE0_UPSAMPLING_192K (true)
+#define DEFAULT_GAIN_RATIO (0.72) // Adjust this according to your filter to avoid clipping.
 
 // ESS DAC Specific
 #define USE_ESS_DAC (true)
