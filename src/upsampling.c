@@ -11,18 +11,24 @@
 #include "ringbuffer.h"
 #include "common.h"
 
-#define ARM_FIR_BLOCKSIZE_0 SIZE_EP_BUFFER *RATIO_UPSAMPLING_48K / 2
-#define ARM_FIR_BLOCKSIZE_1 SIZE_EP_BUFFER *RATIO_UPSAMPLING_48K / 2
-#define ARM_FIR_BLOCKSIZE_2 SIZE_EP_BUFFER *RATIO_UPSAMPLING_48K
+#define ARM_FIR_BLOCKSIZE_0 (SIZE_EP_BUFFER * RATIO_UPSAMPLING_48K / 2)
+#define ARM_FIR_BLOCKSIZE_1 (SIZE_EP_BUFFER * RATIO_UPSAMPLING_48K / 2)
+#define ARM_FIR_BLOCKSIZE_2 (SIZE_EP_BUFFER * RATIO_UPSAMPLING_48K)
+#define ARM_FIR_BLOCKSIZE_384K_0 (SIZE_EP_BUFFER * RATIO_UPSAMPLING_48K)
+#define ARM_FIR_BLOCKSIZE_384K_1 (SIZE_EP_BUFFER * RATIO_UPSAMPLING_48K / 2)
 
 // Filter Type
 #ifdef LINEAR
-#define COEF_4X_FIR coef_fir_filter_4x_0_linear
-#define COEF_2X_FIR coef_fir_filter_2x_1_linear
+#define COEF_4X_FIR (coef_fir_filter_4x_0_linear)
+#define COEF_2X_FIR (coef_fir_filter_2x_1_linear)
+#define COEF_384K_FIR (coef_fir_filter_384k_linear)
 #else
-#define COEF_4X_FIR coef_fir_filter_4x_0
-#define COEF_2X_FIR coef_fir_filter_2x_1
+#define COEF_4X_FIR (coef_fir_filter_4x_0)
+#define COEF_2X_FIR (coef_fir_filter_2x_1)
+#define COEF_384K_FIR (coef_fir_filter_384k)
 #endif
+
+extern volatile bool is_high_power_mode;
 
 // 双二次フィルタ構造体
 static arm_biquad_casd_df1_inst_f32 biquad_filter2L;
@@ -48,16 +54,26 @@ static float biquad4_coeffs[SIZE_BQ_FILTER_4 * 5];
 // ARM FIR構造体
 arm_fir_interpolate_instance_f32 fir_filter4x0L;
 arm_fir_interpolate_instance_f32 fir_filter4x0R;
+arm_fir_interpolate_instance_f32 fir_filter8x0L;
+arm_fir_interpolate_instance_f32 fir_filter8x0R;
 arm_fir_interpolate_instance_f32 fir_filter2x1L;
 arm_fir_interpolate_instance_f32 fir_filter2x1R;
+arm_fir_interpolate_instance_f32 fir_filter4x1L;
+arm_fir_interpolate_instance_f32 fir_filter4x1R;
 arm_fir_interpolate_instance_f32 fir_filter2x2L;
 arm_fir_interpolate_instance_f32 fir_filter2x2R;
 
 // ARM FIR 状態保存バッファ
 float fir4x0L_state[ARM_FIR_BLOCKSIZE_0 + SIZE_FIR_FILTER_0 - 1];
 float fir4x0R_state[ARM_FIR_BLOCKSIZE_0 + SIZE_FIR_FILTER_0 - 1];
+float fir8x0L_state[ARM_FIR_BLOCKSIZE_384K_0 + SIZE_FIR_FILTER_384K - 1];
+float fir8x0R_state[ARM_FIR_BLOCKSIZE_384K_0 + SIZE_FIR_FILTER_384K - 1];
 float fir2x1L_state[ARM_FIR_BLOCKSIZE_1 + SIZE_FIR_FILTER_1 - 1];
 float fir2x1R_state[ARM_FIR_BLOCKSIZE_1 + SIZE_FIR_FILTER_1 - 1];
+float fir4x1L_state[ARM_FIR_BLOCKSIZE_384K_1 + SIZE_FIR_FILTER_384K - 1];
+float fir4x1R_state[ARM_FIR_BLOCKSIZE_384K_1 + SIZE_FIR_FILTER_384K - 1];
+float fir2x2L_state[ARM_FIR_BLOCKSIZE_2 + SIZE_FIR_FILTER_2 - 1];
+float fir2x2R_state[ARM_FIR_BLOCKSIZE_2 + SIZE_FIR_FILTER_2 - 1];
 
 // BiQuad-IIRフィルタの係数を初期化する
 static void initialize_bq_filter_coef(void)
@@ -125,6 +141,12 @@ static void initialize_bq_filter_coef(void)
     arm_fir_interpolate_init_f32(&fir_filter4x0R, 4, size_coef_fir_filter_4x_0, COEF_4X_FIR, fir4x0R_state, ARM_FIR_BLOCKSIZE_0);
     arm_fir_interpolate_init_f32(&fir_filter2x1L, 2, size_coef_fir_filter_2x_1, COEF_2X_FIR, fir2x1L_state, ARM_FIR_BLOCKSIZE_1);
     arm_fir_interpolate_init_f32(&fir_filter2x1R, 2, size_coef_fir_filter_2x_1, COEF_2X_FIR, fir2x1R_state, ARM_FIR_BLOCKSIZE_1);
+    arm_fir_interpolate_init_f32(&fir_filter2x2L, 2, size_coef_fir_filter_2x_2, coef_fir_filter_2x_2, fir2x2L_state, ARM_FIR_BLOCKSIZE_2);
+    arm_fir_interpolate_init_f32(&fir_filter2x2R, 2, size_coef_fir_filter_2x_2, coef_fir_filter_2x_2, fir2x2R_state, ARM_FIR_BLOCKSIZE_2);
+    arm_fir_interpolate_init_f32(&fir_filter8x0L, 8, size_coef_fir_filter_384k, COEF_384K_FIR, fir8x0L_state, ARM_FIR_BLOCKSIZE_384K_0);
+    arm_fir_interpolate_init_f32(&fir_filter8x0R, 8, size_coef_fir_filter_384k, COEF_384K_FIR, fir8x0R_state, ARM_FIR_BLOCKSIZE_384K_0);
+    arm_fir_interpolate_init_f32(&fir_filter4x1L, 4, size_coef_fir_filter_384k, COEF_384K_FIR, fir4x1L_state, ARM_FIR_BLOCKSIZE_384K_1);
+    arm_fir_interpolate_init_f32(&fir_filter4x1R, 4, size_coef_fir_filter_384k, COEF_384K_FIR, fir4x1R_state, ARM_FIR_BLOCKSIZE_384K_1);
 }
 
 // アップサンプリングフィルタの初期化処理
@@ -162,6 +184,13 @@ extern void clear_bq_filter_delay(void)
         fir2x1L_state[i] = 0;
         fir2x1R_state[i] = 0;
     }
+}
+
+// upsampling FIR 8x
+static uint32_t __not_in_flash_func(FIR_filter_8x)(uint32_t length, float *input, float *output, arm_fir_interpolate_instance_f32 *S)
+{
+    arm_fir_interpolate_f32(S, input, output, length);
+    return length << 3;
 }
 
 // upsampling FIR 4x
@@ -287,8 +316,8 @@ void __not_in_flash_func(upsampling_process_core0)(void)
 
             if (!CORE0_UPSAMPLING_192K)
             {
-                len_L = fast_BQ_filter_2x_2(length, (float*)buffer_copy_from_ep_left_ch, upsample_buffer_0_L, &biquad_filter2L);
-                len_R = fast_BQ_filter_2x_2(length, (float*)buffer_copy_from_ep_right_ch, upsample_buffer_0_R, &biquad_filter2R);
+                len_L = fast_BQ_filter_2x_2(len_L, upsample_buffer_0_L, upsample_buffer_0_L, &biquad_filter2L);
+                len_R = fast_BQ_filter_2x_2(len_R, upsample_buffer_0_R, upsample_buffer_0_R, &biquad_filter2R);
             }
             else
             {
@@ -321,10 +350,18 @@ void __not_in_flash_func(upsampling_process_core0)(void)
             if (!CORE0_UPSAMPLING_192K)
             {
                 len_L = FIR_filter_2x(length, (float*)buffer_copy_from_ep_left_ch, upsample_buffer_0_L, &fir_filter2x1L);
-                len_L = fast_BQ_filter_2x_2(len_L, upsample_buffer_0_L, upsample_buffer_1_L, &biquad_filter2L);
-
                 len_R = FIR_filter_2x(length, (float*)buffer_copy_from_ep_right_ch, upsample_buffer_0_R, &fir_filter2x1R);
-                len_R = fast_BQ_filter_2x_2(len_R, upsample_buffer_0_R, upsample_buffer_1_R, &biquad_filter2R);
+
+                if (is_high_power_mode)
+                {
+                    len_L = FIR_filter_2x(len_L, upsample_buffer_0_L, upsample_buffer_1_L, &fir_filter2x2L);
+                    len_R = FIR_filter_2x(len_R, upsample_buffer_0_R, upsample_buffer_1_R, &fir_filter2x2R);
+                }
+                else
+                {
+                    len_L = fast_BQ_filter_2x_2(len_L, upsample_buffer_0_L, upsample_buffer_1_L, &biquad_filter2L);
+                    len_R = fast_BQ_filter_2x_2(len_R, upsample_buffer_0_R, upsample_buffer_1_R, &biquad_filter2R);
+                }
             }
             else
             {
@@ -352,26 +389,31 @@ void __not_in_flash_func(upsampling_process_core0)(void)
             ringbuf_read_array_no_spinlock(buffer_copy_from_ep_right_ch, length, &buffer_ep_Rch);
             restore_interrupts(save);
 
-            len_L = FIR_filter_4x(length, (float*)buffer_copy_from_ep_left_ch, upsample_buffer_1_L, &fir_filter4x0L);
-            len_R = FIR_filter_4x(length, (float*)buffer_copy_from_ep_right_ch, upsample_buffer_1_R, &fir_filter4x0R);
-
             if (!CORE0_UPSAMPLING_192K)
             {
-                len_L = fast_BQ_filter_2x_2(len_L, upsample_buffer_1_L, upsample_buffer_0_L, &biquad_filter2L);
-                len_R = fast_BQ_filter_2x_2(len_R, upsample_buffer_1_R, upsample_buffer_0_R, &biquad_filter2R);
-            }
+                len_L = FIR_filter_4x(length, (float*)buffer_copy_from_ep_left_ch, upsample_buffer_0_L, &fir_filter4x0L);
+                len_R = FIR_filter_4x(length, (float*)buffer_copy_from_ep_right_ch, upsample_buffer_0_R, &fir_filter4x0R);
 
-            save = save_and_disable_interrupts();
-            if (!CORE0_UPSAMPLING_192K)
-            {
-                ringbuf_write_array_spinlock((int32_t *)upsample_buffer_0_L, len_L, &buffer_upsr_data_Lch_0);
-                ringbuf_write_array_spinlock((int32_t *)upsample_buffer_0_R, len_R, &buffer_upsr_data_Rch_0);
+                if (is_high_power_mode)
+                {
+                    len_L = FIR_filter_2x(len_L, upsample_buffer_0_L, upsample_buffer_1_L, &fir_filter2x2L);
+                    len_R = FIR_filter_2x(len_R, upsample_buffer_0_R, upsample_buffer_1_R, &fir_filter2x2R);
+                }
+                else
+                {
+                    len_L = fast_BQ_filter_2x_2(len_L, upsample_buffer_0_L, upsample_buffer_1_L, &biquad_filter2L);
+                    len_R = fast_BQ_filter_2x_2(len_R, upsample_buffer_0_R, upsample_buffer_1_R, &biquad_filter2R);
+                }
             }
             else
             {
-                ringbuf_write_array_spinlock((int32_t *)upsample_buffer_1_L, len_L, &buffer_upsr_data_Lch_0);
-                ringbuf_write_array_spinlock((int32_t *)upsample_buffer_1_R, len_R, &buffer_upsr_data_Rch_0);
+                len_L = FIR_filter_4x(length, (float*)buffer_copy_from_ep_left_ch, upsample_buffer_1_L, &fir_filter4x0L);
+                len_R = FIR_filter_4x(length, (float*)buffer_copy_from_ep_right_ch, upsample_buffer_1_R, &fir_filter4x0R);
             }
+
+            save = save_and_disable_interrupts();
+            ringbuf_write_array_spinlock((int32_t *)upsample_buffer_1_L, len_L, &buffer_upsr_data_Lch_0);
+            ringbuf_write_array_spinlock((int32_t *)upsample_buffer_1_R, len_R, &buffer_upsr_data_Rch_0);
             restore_interrupts(save);
         }
         break;

@@ -20,6 +20,7 @@
 // Test mode
 #define TEST_MODE (true)
 #define TEST_PIN1 (1)
+#define TEST_PIN2 (2)
 
 // String Desc.
 #define MFG_NAME ("ArqAlice")
@@ -36,10 +37,10 @@
 #define I2S_STRENGTH_REINFORCE_ENABLE (true)
 
 // Power Mode Switch Pin
-// The Hi-Power Mode outputs 1536kHz/1411.2kHz and is only supported by a limited number of DACs.
+// The Hi-Power Mode, Core0 uses 384KHz FIR Filter
 #define POWER_MODE_SWITCH_PIN (0)
 #define ALWAYS_HIGH_POWER (false)
-#define ALWAYS_LOW_POWER (false)
+#define ALWAYS_LOW_POWER (true)
 
 // I2C
 #define I2C_PORT (i2c1)
@@ -52,8 +53,9 @@
 #define I2S_SIDESET_BASE (27)
 
 // Upsampler control
-#define BYPASS_CORE1_UPSAMPLING (false)
+#define BYPASS_CORE1_UPSAMPLING (true)
 #define CORE0_UPSAMPLING_192K (true)
+#define ENABLE_1536KHZ_OUTPUT (false)
 #define DEFAULT_GAIN_RATIO (0.72) // Adjust this according to your filter to avoid clipping.
 
 // ESS DAC Specific
@@ -74,14 +76,14 @@
 // システムクロック
 #define SYS_CLOCK_KHZ_44K (282000)
 #define SYS_CLOCK_KHZ_48K (307200)
-#define SYS_CLOCK_KHZ_LP_44K (208800)
-#define SYS_CLOCK_KHZ_LP_48K (208800)
+#define SYS_CLOCK_KHZ_LP_44K (208000)
+#define SYS_CLOCK_KHZ_LP_48K (208000)
 // #define SYS_CLOCK_KHZ 208800 //  208M8/48k/64 = 67.968->68, 208M8/44k1/64 = 73.979->74
 // #define SYS_CLOCK_KHZ 150000
 
 // Core Voltage
 #define V_CORE_HI VREG_VOLTAGE_1_25
-#define V_CORE_LO VREG_VOLTAGE_1_05
+#define V_CORE_LO VREG_VOLTAGE_1_25
 
 // 初期オーディオサンプル周波数
 #define AUDIO_INITIAL_FREQ (44100)
@@ -237,7 +239,7 @@ inline uint16_t get_ratio_upsampling_core0(uint32_t freq)
 // アップサンプリング倍率取得関数(Core1)
 inline uint16_t get_ratio_upsampling_core1(void)
 {
-	if (is_high_power_mode && (!BYPASS_CORE1_UPSAMPLING) && (!CORE0_UPSAMPLING_192K))
+	if (ENABLE_1536KHZ_OUTPUT && is_high_power_mode && (!BYPASS_CORE1_UPSAMPLING) && (!CORE0_UPSAMPLING_192K))
 	{
 		return RATIO_UPSAMPLING_CORE1;
 	}

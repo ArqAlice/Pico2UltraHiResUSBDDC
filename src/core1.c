@@ -31,7 +31,9 @@ void core1_main()
 
 	while (true)
 	{
+		if(TEST_MODE) gpio_put(TEST_PIN2, true);
 		dma_tx_start();
+		if(TEST_MODE) gpio_put(TEST_PIN2, false);
 		sleep_us(1);
 	}
 }

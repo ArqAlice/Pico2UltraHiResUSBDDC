@@ -11,7 +11,7 @@ FS = 192000                 # アップサンプリング前の周波数[Hz]
 UPSAMPLING_RATIO = 2        # アップサンプリング倍率
 
 # フィルタのパラメータ
-N_TAP = 96                  # FIRフィルタのタップ数
+N_TAP = 128                  # FIRフィルタのタップ数
 FIR_KAISER_WINDOW = 85000   # カイザー窓の大きさ
 FREQ_CUTOFF = 48000         # カットオフ周波数[Hz]
 

@@ -78,7 +78,7 @@ void ess_dac_i2c_setup(void)
 
 		// DPLLバンド幅設定
 		i2cbuf[0] = 0x0C; // Resister 12
-		i2cbuf[1] = 0xAA; // I2S:0xB, DSD:0xA(default)
+		i2cbuf[1] = 0xAA; // I2S:0xA, DSD:0xA(default)
 		i2c_write_blocking(I2C_PORT, I2C_ESS_DAC_ADDR >>1, i2cbuf, 2, true);
 		sleep_ms(1);
 

@@ -40,6 +40,7 @@ static char *descriptor_strings[] =
 #define ENDPOINT_FREQ_CONTROL (1u)
 
 extern uint32_t now_playing;
+extern volatile bool is_high_power_mode;
 
 static void _as_audio_packet(struct usb_endpoint *ep);
 
@@ -753,8 +754,8 @@ static void _as_audio_packet(struct usb_endpoint *ep)
 		case 176400:
 			if (!CORE0_UPSAMPLING_192K)
 			{
-				arm_scale_f32(ep_Lch, audio_state.vol_float * DEFAULT_GAIN_RATIO, ep_Lch, length);
-				arm_scale_f32(ep_Rch, audio_state.vol_float * DEFAULT_GAIN_RATIO, ep_Rch, length);
+				arm_scale_f32(ep_Lch, audio_state.vol_float * DEFAULT_GAIN_RATIO * 2., ep_Lch, length);
+				arm_scale_f32(ep_Rch, audio_state.vol_float * DEFAULT_GAIN_RATIO * 2., ep_Rch, length);
 			}
 			else
 			{
@@ -767,8 +768,16 @@ static void _as_audio_packet(struct usb_endpoint *ep)
 		case 88200:
 			if (!CORE0_UPSAMPLING_192K)
 			{
-				arm_scale_f32(ep_Lch, audio_state.vol_float * DEFAULT_GAIN_RATIO * 2., ep_Lch, length);
-				arm_scale_f32(ep_Rch, audio_state.vol_float * DEFAULT_GAIN_RATIO * 2., ep_Rch, length);
+				if (is_high_power_mode)
+				{
+					arm_scale_f32(ep_Lch, audio_state.vol_float * DEFAULT_GAIN_RATIO * 4., ep_Lch, length);
+					arm_scale_f32(ep_Rch, audio_state.vol_float * DEFAULT_GAIN_RATIO * 4., ep_Rch, length);
+				}
+				else
+				{
+					arm_scale_f32(ep_Lch, audio_state.vol_float * DEFAULT_GAIN_RATIO * 2., ep_Lch, length);
+					arm_scale_f32(ep_Rch, audio_state.vol_float * DEFAULT_GAIN_RATIO * 2., ep_Rch, length);
+				}
 			}
 			else
 			{
@@ -782,8 +791,16 @@ static void _as_audio_packet(struct usb_endpoint *ep)
 		default:
 			if (!CORE0_UPSAMPLING_192K)
 			{
-				arm_scale_f32(ep_Lch, audio_state.vol_float * DEFAULT_GAIN_RATIO * 4., ep_Lch, length);
-				arm_scale_f32(ep_Rch, audio_state.vol_float * DEFAULT_GAIN_RATIO * 4., ep_Rch, length);
+				if (is_high_power_mode)
+				{
+					arm_scale_f32(ep_Lch, audio_state.vol_float * DEFAULT_GAIN_RATIO * 8., ep_Lch, length);
+					arm_scale_f32(ep_Rch, audio_state.vol_float * DEFAULT_GAIN_RATIO * 8., ep_Rch, length);
+				}
+				else
+				{
+					arm_scale_f32(ep_Lch, audio_state.vol_float * DEFAULT_GAIN_RATIO * 4., ep_Lch, length);
+					arm_scale_f32(ep_Rch, audio_state.vol_float * DEFAULT_GAIN_RATIO * 4., ep_Rch, length);
+				}
 			}
 			else
 			{

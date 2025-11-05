@@ -95,7 +95,7 @@ bool __not_in_flash_func(core0_timer_callback)(struct repeating_timer *t)
 	if (count >= MILLISEC50)
 	{
 		// パワーモード切り替え
-		if ((gpio_get(POWER_MODE_SWITCH_PIN) || ALWAYS_HIGH_POWER) && (!ALWAYS_LOW_POWER) && (!BYPASS_CORE1_UPSAMPLING) && (!CORE0_UPSAMPLING_192K))
+		if ((gpio_get(POWER_MODE_SWITCH_PIN) || ALWAYS_HIGH_POWER) && (!ALWAYS_LOW_POWER) && (!CORE0_UPSAMPLING_192K))
 		{
 			// HiPowerMode
 			if (!is_high_power_mode)
@@ -183,7 +183,9 @@ int main(void)
 	if(TEST_MODE)
 	{
 		gpio_init(TEST_PIN1);
+		gpio_init(TEST_PIN2);
 		gpio_set_dir(TEST_PIN1, GPIO_OUT);
+		gpio_set_dir(TEST_PIN2, GPIO_OUT);
 	}
 
 	// 各種バッファ初期化

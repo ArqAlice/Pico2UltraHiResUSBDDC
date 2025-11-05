@@ -21,18 +21,19 @@
 #define SIZE_BQ_FILTER_1 (5)
 #define SIZE_BQ_DELAY_1 (SIZE_BQ_FILTER_1)
 
-#define SIZE_BQ_FILTER_2 (4)
+#define SIZE_BQ_FILTER_2 (5)
 #define SIZE_BQ_DELAY_2 (SIZE_BQ_FILTER_2)
 
-#define SIZE_BQ_FILTER_3 (4)
+#define SIZE_BQ_FILTER_3 (5)
 #define SIZE_BQ_DELAY_3 (SIZE_BQ_FILTER_3)
 
 #define SIZE_BQ_FILTER_4 (3)
 #define SIZE_BQ_DELAY_4 (SIZE_BQ_FILTER_4)
 
 #define SIZE_FIR_FILTER_0 (128)
+#define SIZE_FIR_FILTER_384K (256)
 #define SIZE_FIR_FILTER_1 (48)
-#define SIZE_FIR_FILTER_2 (48)
+#define SIZE_FIR_FILTER_2 (56)
 
 
 // 双二次フィルタの係数と遅延を定義する
@@ -69,6 +70,11 @@ extern const uint32_t size_coef_fir_filter_4x_0;
 extern const float coef_fir_filter_2x_1[SIZE_FIR_FILTER_1];
 extern const float coef_fir_filter_2x_1_linear[SIZE_FIR_FILTER_1];
 extern const uint32_t size_coef_fir_filter_2x_1;
+extern const float coef_fir_filter_2x_2[SIZE_FIR_FILTER_2];
+extern const uint32_t size_coef_fir_filter_2x_2;
+extern const float coef_fir_filter_384k_linear[SIZE_FIR_FILTER_384K];
+extern const float coef_fir_filter_384k[SIZE_FIR_FILTER_384K];
+extern const uint32_t size_coef_fir_filter_384k;
 
 extern void init_upsampling_filter(void);
 extern void clear_bq_filter_delay(void);
