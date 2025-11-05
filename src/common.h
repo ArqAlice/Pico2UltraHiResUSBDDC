@@ -39,8 +39,8 @@
 // Power Mode Switch Pin
 // The Hi-Power Mode, Core0 uses 384KHz FIR Filter
 #define POWER_MODE_SWITCH_PIN (0)
-#define ALWAYS_HIGH_POWER (false)
-#define ALWAYS_LOW_POWER (true)
+#define ALWAYS_HIGH_POWER (true)
+#define ALWAYS_LOW_POWER (false)
 
 // I2C
 #define I2C_PORT (i2c1)
@@ -54,15 +54,15 @@
 
 // Upsampler control
 #define BYPASS_CORE1_UPSAMPLING (true)
-#define CORE0_UPSAMPLING_192K (true)
+#define CORE0_UPSAMPLING_192K (false)
 #define ENABLE_1536KHZ_OUTPUT (false)
 #define DEFAULT_GAIN_RATIO (0.72) // Adjust this according to your filter to avoid clipping.
 
 // ESS DAC Specific
-#define USE_ESS_DAC (true)
-#define KIND_ESS_DAC (ES9038Q2M)
-#define I2C_ESS_DAC_ADDR (ADDR0_ES9038Q2M)
-#define ENABLE_ES9038Q2M_DEPOP (true)
+#define USE_ESS_DAC (false)
+#define KIND_ESS_DAC (ESS_DAC_NONE)
+#define I2C_ESS_DAC_ADDR (ADDR0_NONE)
+#define ENABLE_ES9038Q2M_DEPOP (false)
 #define TIME_ES9038Q2M_DEPOP_USEC (40000)
 #define DAC_ENABLE_PIN (5)
 
