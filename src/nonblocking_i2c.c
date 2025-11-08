@@ -13,6 +13,7 @@
 
 #define bool_to_bit(x) ((uint)!!(x))
 
+static bool is_transferring_data;
 static i2c_hw_t *i2c_hw;
 static int dma_ch;
 static dma_channel_config c_dma;
@@ -37,14 +38,23 @@ void i2c_dma_initialize(i2c_inst_t *i2c)
     channel_config_set_dreq(&c_dma, i2c_get_dreq(i2c, true));
 }
 
+bool i2c_dma_is_busy(void)
+{
+    return is_transferring_data;
+}
+
 void i2c_write_dma(i2c_inst_t *i2c, uint8_t addr_7bit, const uint8_t *data, size_t len, bool nostop)
 {
     tx_length = len;
     if (len == 0 || data == NULL) return;
 
+    // dma動作中は終わるまで待機
+    while(dma_channel_is_busy(dma_ch)) tight_loop_contents();
+
     // I2Cのアドレスを格納し、割り込み処理をセット
     if(i2c == i2c0)
     {
+        is_transferring_data = true;
         i2c_hw = i2c0_hw;
         i2c_hw->intr_mask |= I2C_IC_INTR_MASK_M_STOP_DET_BITS; // STOP_DET割り込みを有効化
         i2c_hw->intr_mask |= I2C_IC_INTR_MASK_M_TX_EMPTY_BITS; // TX_EMPTY割り込みを有効化
@@ -55,6 +65,7 @@ void i2c_write_dma(i2c_inst_t *i2c, uint8_t addr_7bit, const uint8_t *data, size
     }
     else if(i2c == i2c1)
     {
+        is_transferring_data = true;
         i2c_hw = i2c1_hw;
         i2c_hw->intr_mask |= I2C_IC_INTR_MASK_M_STOP_DET_BITS; // STOP_DET割り込みを有効化
         i2c_hw->intr_mask |= I2C_IC_INTR_MASK_M_TX_EMPTY_BITS; // TX_EMPTY割り込みを有効化
@@ -67,9 +78,6 @@ void i2c_write_dma(i2c_inst_t *i2c, uint8_t addr_7bit, const uint8_t *data, size
     {
         return; // 不正なI2Cを指定したらreturnする
     }
-
-    // dma動作中は終わるまで待機
-    while(dma_channel_is_busy(dma_ch)) tight_loop_contents();
     
     // コマンドデータを作成
     for(int byte_ctr = 0; byte_ctr < (int)len; byte_ctr++)
@@ -130,4 +138,133 @@ void i2c_irq_handler(void)
         irq_remove_handler(I2C1_IRQ, i2c_irq_handler);
         irq_set_enabled(I2C1_IRQ, false);
     }
+    is_transferring_data = false;
+}
+
+
+// ---------------------- ring buffer ----------------------
+extern int16_t initialize_i2c_ringbuffer(uint16_t size, I2C_RINGBUFFER *ringbuffer)
+{
+    ringbuffer->size_buffer = size;
+    ringbuffer->write_point = 0;
+    ringbuffer->read_point = 0;
+    ringbuffer->size_using = 0;
+    ringbuffer->buffer = (uint8_t *)malloc(sizeof(uint8_t) * size);
+    return 0;
+}
+
+extern void clear_i2c_ringbuffer(I2C_RINGBUFFER *ringbuffer)
+{
+    ringbuffer->write_point = 0;
+    ringbuffer->read_point = 0;
+    ringbuffer->size_using = 0;
+}
+
+extern bool i2c_ringbuf_is_full(I2C_RINGBUFFER *ringbuffer)
+{
+    if (ringbuffer->write_point - ringbuffer->read_point >= ringbuffer->size_buffer)
+        return true;
+    else
+        return false;
+}
+
+extern int64_t i2c_ringbuf_get_size_using(I2C_RINGBUFFER *ringbuffer)
+{
+    return ringbuffer->size_using;
+}
+
+extern int64_t i2c_ringbuf_get_size_remain(I2C_RINGBUFFER *ringbuffer)
+{
+    return ringbuffer->size_buffer - ringbuffer->size_using;
+}
+
+extern uint32_t i2c_ringbuf_get_read_point(I2C_RINGBUFFER *ringbuffer)
+{
+    return ringbuffer->read_point;
+}
+
+extern uint32_t i2c_ringbuf_get_write_point(I2C_RINGBUFFER *ringbuffer)
+{
+    return ringbuffer->write_point;
+}
+
+extern int16_t i2c_ringbuf_write(uint8_t input, I2C_RINGBUFFER *ringbuffer)
+{
+    if (ringbuffer->size_using == ringbuffer->size_buffer)
+    {
+        return -1; // buffer is full
+    }
+
+    *(ringbuffer->buffer + (ringbuffer->write_point)) = input;
+    ringbuffer->write_point++;
+    if (ringbuffer->write_point >= ringbuffer->size_buffer)
+        ringbuffer->write_point = 0;
+    ringbuffer->size_using++;
+    return 1;
+}
+
+extern int16_t i2c_ringbuf_read(uint8_t *output, I2C_RINGBUFFER *ringbuffer)
+{
+    if (ringbuffer->size_using == 0)
+    {
+        return -1; // buffer is empty
+    }
+
+    *output = *(ringbuffer->buffer + (ringbuffer->read_point));
+
+    ringbuffer->read_point++;
+    if (ringbuffer->read_point >= ringbuffer->size_buffer)
+        ringbuffer->read_point = 0;
+    ringbuffer->size_using--;
+    return 1;
+}
+
+extern int64_t i2c_ringbuf_read_array(uint8_t *output, uint32_t size, I2C_RINGBUFFER *ringbuffer)
+{
+    if (ringbuffer->size_using == 0 || ringbuffer->size_using < size)
+    {
+        return -1; // buffer is empty, or now buffer usage is not bigger than requested size
+    }
+
+    int32_t rx1_size = ((ringbuffer->read_point + size) > ringbuffer->size_buffer) ? ringbuffer->size_buffer - ringbuffer->read_point : size;
+    int32_t rx2_size = size - rx1_size;
+
+    memcpy(output, ringbuffer->buffer + ringbuffer->read_point, sizeof(uint8_t) * rx1_size);
+    if (rx2_size > 0)
+        memcpy(output + rx1_size, ringbuffer->buffer, sizeof(uint8_t) * rx2_size);
+
+    int32_t inner_read_point = ringbuffer->read_point + size;
+    if (inner_read_point > ringbuffer->size_buffer)
+        inner_read_point -= ringbuffer->size_buffer;
+    ringbuffer->read_point = inner_read_point;
+
+    ringbuffer->size_using -= size;
+
+    return size;
+}
+
+extern int64_t i2c_ringbuf_write_array(uint8_t *input, uint32_t size, I2C_RINGBUFFER *ringbuffer)
+{
+    volatile int64_t remain_size = ringbuffer->size_buffer - ringbuffer->size_using;
+
+    if (ringbuffer->size_using == ringbuffer->size_buffer || remain_size < size)
+    {
+        return -1; // buffer is full
+    }
+
+    int32_t tx1_size = ((ringbuffer->write_point + size) > ringbuffer->size_buffer) ? ringbuffer->size_buffer - ringbuffer->write_point : size;
+    int32_t tx2_size = size - tx1_size;
+
+    memcpy(ringbuffer->buffer + ringbuffer->write_point, input, sizeof(uint8_t) * tx1_size);
+    if (tx2_size > 0)
+        memcpy(ringbuffer->buffer, input + tx1_size, sizeof(uint8_t) * tx2_size);
+
+    int32_t inner_write_point = ringbuffer->write_point + size;
+    if (inner_write_point > ringbuffer->size_buffer)
+        inner_write_point -= ringbuffer->size_buffer;
+    ringbuffer->write_point = inner_write_point;
+
+    ringbuffer->size_using += size;
+
+    return size;
 }

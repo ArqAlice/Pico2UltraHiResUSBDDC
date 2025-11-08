@@ -78,7 +78,7 @@ void renew_clock(bool is_high_power)
 // DACを設定するためのI2C
 void setup_I2C(void)
 {
-	// running at 100kHz.
+	// run at 100kHz.
 	i2c_init(I2C_PORT, 104 * 1000);
 	gpio_set_function(I2C_SDA, GPIO_FUNC_I2C);
 	gpio_set_function(I2C_SCL, GPIO_FUNC_I2C);
@@ -90,8 +90,13 @@ void setup_I2C(void)
 
 void volume_control(void)
 {
-	//static float volume_slow = MIN_VOLUME;
-	//volume_slow += ((float)audio_state.acq_volume - volume_slow) * 0.85;
-
-	audio_state.vol_float = saturation_f32(pow(10, (float)audio_state.acq_volume / VOLUME_RESOLUTION / 10.0), 1.0, 0);
+	if (ENABLE_ESS_DAC_VOLUME)
+	{
+		audio_state.vol_float = 1.0;
+		ess_dac_volume();
+	}
+	else
+	{
+		audio_state.vol_float = saturation_f32(pow(10, (float)audio_state.acq_volume / (float)VOLUME_RESOLUTION / 20.0), 1.0, 0);
+	}
 }

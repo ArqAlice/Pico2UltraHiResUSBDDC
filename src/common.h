@@ -63,6 +63,10 @@
 #define KIND_ESS_DAC (ES9038Q2M)
 #define I2C_ESS_DAC_ADDR (ADDR0_ES9038Q2M)
 #define ENABLE_ES9038Q2M_DEPOP (true)
+#define ENABLE_ESS_DAC_VOLUME (true)
+#define ENABLE_ESS_DAC_THD_COMPEN (false)
+#define ESS_THD_COMPEN_C2 (0) // 16bit signed int
+#define ESS_THD_COMPEN_C3 (0) // 16bit signed int
 #define TIME_ES9038Q2M_DEPOP_USEC (40000)
 #define DAC_ENABLE_PIN (5)
 
@@ -130,6 +134,10 @@
 #define MIN_VOLUME (-64 * VOLUME_RESOLUTION)
 #define MAX_VOLUME (0 * VOLUME_RESOLUTION)
 #define DEFAULT_VOLUME (0 * VOLUME_RESOLUTION)
+
+// ノンブロッキングI2C
+#define SIZE_I2C_RINGBUFFER (16)
+#define SIZE_I2C_TRANSFER_UNIT (2)
 
 typedef struct
 {
