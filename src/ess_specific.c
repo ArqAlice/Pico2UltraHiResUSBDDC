@@ -100,30 +100,16 @@ void ess_dac_i2c_setup(void)
 			i2c_write_blocking(I2C_PORT, I2C_ESS_DAC_ADDR >>1, i2cbuf, 2, true);
 		}
 
-		if (!CORE0_UPSAMPLING_192K)
-		{
-			// 内蔵アップサンプリングを使用しない
-			//i2cbuf[0] = 0x07; // Resister #7
-			//i2cbuf[1] = 0x08; // bypass OSF
-			//i2c_write_blocking(I2C_PORT, I2C_ESS_DAC_ADDR >>1, i2cbuf, 2, true);
-			//sleep_ms(1);
-
-			// 128fsモードにする(DPLLが無効になる, 100MHzのクロックを使用して高レートPCMを入力するときに使う)
-			//i2cbuf[0] = 0x0A; // Resister #10
-			//i2cbuf[1] = 0x12; // enable 128fs-mode, lock_speed=5461FSL edges(default)
-			//i2c_write_blocking(I2C_PORT, I2C_ESS_DAC_ADDR >>1, i2cbuf, 2, true);
-			//sleep_ms(1);
-		}
-
 		// DPLLバンド幅設定
+		uint8_t bandwidth = ((uint8_t)ESS_DPLL_BANDWIDTH) >>4;
 		i2cbuf[0] = 0x0C; // Resister 12
-		i2cbuf[1] = 0xAA; // I2S:0xA, DSD:0xA(default)
+		i2cbuf[1] = ((bandwidth & 0xF) << 4) | 0x0A;
 		i2c_write_blocking(I2C_PORT, I2C_ESS_DAC_ADDR >>1, i2cbuf, 2, true);
 		sleep_ms(1);
 
 		// PLL LOCK SPEED
 		i2cbuf[0] = 0x0A; // Resister 10
-		i2cbuf[1] = 0x00; // lock speed :0x0(16384FSL Edges)
+		i2cbuf[1] = 0x00 | ((uint8_t)ESS_DPLL_LOCKSPEED & 0xF);
 		i2c_write_blocking(I2C_PORT, I2C_ESS_DAC_ADDR >>1, i2cbuf, 2, true);
 		sleep_ms(1);
 	}
