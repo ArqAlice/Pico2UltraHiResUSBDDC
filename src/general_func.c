@@ -90,13 +90,21 @@ void setup_I2C(void)
 
 void volume_control(void)
 {
-	if (ENABLE_ESS_DAC_VOLUME)
+	if (!audio_state.mute)
 	{
-		audio_state.vol_float = 1.0;
-		ess_dac_volume();
+		if (ENABLE_ESS_DAC_VOLUME)
+		{
+			audio_state.vol_float = 1.0;
+			ess_dac_volume();
+		}
+		else
+		{
+			audio_state.vol_float = saturation_f32(pow(10, (float)audio_state.acq_volume / (float)VOLUME_RESOLUTION / 20.0), 1.0, 0);
+		}
 	}
 	else
 	{
-		audio_state.vol_float = saturation_f32(pow(10, (float)audio_state.acq_volume / (float)VOLUME_RESOLUTION / 20.0), 1.0, 0);
+		audio_state.vol_float = 0.;
 	}
+
 }
