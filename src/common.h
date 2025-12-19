@@ -89,7 +89,7 @@
 
 // Core Voltage
 #define V_CORE_HI VREG_VOLTAGE_1_25
-#define V_CORE_LO VREG_VOLTAGE_1_25
+#define V_CORE_LO VREG_VOLTAGE_1_05
 
 // 初期オーディオサンプル周波数
 #define AUDIO_INITIAL_FREQ (44100)
