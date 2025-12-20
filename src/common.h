@@ -66,7 +66,7 @@
 #define ENABLE_ESS_DAC_VOLUME (true)
 #define ENABLE_ESS_DAC_THD_COMPEN (true)
 #define ESS_THD_COMPEN_C2 (0) // 16bit signed int
-#define ESS_THD_COMPEN_C3 (-256) // 16bit signed int
+#define ESS_THD_COMPEN_C3 (-32) // 16bit signed int
 #define ESS_DPLL_BANDWIDTH (0x80) // 0~255, 0 is DPLL off
 #define ESS_DPLL_LOCKSPEED (2)   // 0~16
 #define TIME_ES9038Q2M_DEPOP_USEC (40000)
