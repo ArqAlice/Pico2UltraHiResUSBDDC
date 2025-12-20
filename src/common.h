@@ -64,9 +64,9 @@
 #define I2C_ESS_DAC_ADDR (ADDR0_ES9038Q2M)
 #define ENABLE_ES9038Q2M_DEPOP (true)
 #define ENABLE_ESS_DAC_VOLUME (true)
-#define ENABLE_ESS_DAC_THD_COMPEN (true)
+#define ENABLE_ESS_DAC_THD_COMPEN (false)
 #define ESS_THD_COMPEN_C2 (0) // 16bit signed int
-#define ESS_THD_COMPEN_C3 (-256) // 16bit signed int
+#define ESS_THD_COMPEN_C3 (0) // 16bit signed int
 #define ESS_DPLL_BANDWIDTH (0x80) // 0~255, 0 is DPLL off
 #define ESS_DPLL_LOCKSPEED (2)   // 0~16
 #define TIME_ES9038Q2M_DEPOP_USEC (40000)
