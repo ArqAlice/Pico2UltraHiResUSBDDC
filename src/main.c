@@ -27,6 +27,7 @@
 #include "ringbuffer.h"
 #include "debug_with_gpio.h"
 #include "ess_specific.h"
+#include "nonblocking_i2c.h"
 
 // パワー管理
 volatile bool is_high_power_mode = true;
@@ -44,6 +45,9 @@ RINGBUFFER buffer_ep_Rch;
 RINGBUFFER buffer_upsr_data_Lch_0;
 RINGBUFFER buffer_upsr_data_Rch_0;
 
+// I2C ring buffer
+I2C_RINGBUFFER i2c_ringbuffer0;
+
 // Audio State
 AUDIO_STATE audio_state;
 uint32_t now_playing = 0;
@@ -54,6 +58,9 @@ static bool is_cleared_buffer = false;
 volatile absolute_time_t time_start_output;
 
 bool __not_in_flash_func(core0_timer_callback)(struct repeating_timer *t);
+
+// I2C送信インターバル
+volatile absolute_time_t time_start_i2c_transfer = 0;
 
 // Core1メイン
 extern void core1_main();
@@ -95,7 +102,7 @@ bool __not_in_flash_func(core0_timer_callback)(struct repeating_timer *t)
 	if (count >= MILLISEC50)
 	{
 		// パワーモード切り替え
-		if ((gpio_get(POWER_MODE_SWITCH_PIN) || ALWAYS_HIGH_POWER) && (!ALWAYS_LOW_POWER) && (!BYPASS_CORE1_UPSAMPLING) && (!CORE0_UPSAMPLING_192K))
+		if ((gpio_get(POWER_MODE_SWITCH_PIN) || ALWAYS_HIGH_POWER) && (!ALWAYS_LOW_POWER) && (!CORE0_UPSAMPLING_192K))
 		{
 			// HiPowerMode
 			if (!is_high_power_mode)
@@ -157,14 +164,18 @@ bool __not_in_flash_func(core0_timer_callback)(struct repeating_timer *t)
 
 int main(void)
 {
-	// 突入電流低減回路
-	if(USE_INRUSH_CURRENT_REDUCER)
+	// 外部電源有効化ピン
+	if(USE_EXT_POWER_ENABLE)
 	{
-		gpio_init(INRUSH_CURRENT_REDUCER_PIN);
-		gpio_set_dir(INRUSH_CURRENT_REDUCER_PIN, GPIO_OUT);
-		gpio_put(INRUSH_CURRENT_REDUCER_PIN, false);
-		sleep_us(INRUSH_CURRENT_REDUCER_TIME_US);
-		gpio_put(INRUSH_CURRENT_REDUCER_PIN, true);
+		gpio_init(EXT_POWER_ENABLE_PIN);
+		gpio_set_dir(EXT_POWER_ENABLE_PIN, GPIO_OUT);
+		gpio_put(EXT_POWER_ENABLE_PIN, false);
+		sleep_us(BOOT_WAIT_TIME_US);
+		gpio_put(EXT_POWER_ENABLE_PIN, true);
+	}
+	else
+	{
+		sleep_us(BOOT_WAIT_TIME_US);
 	}
 
 	// 動作電圧とクロックを引き上げる
@@ -174,6 +185,15 @@ int main(void)
 	sleep_us(1);
 
 	stdout_uart_init();
+
+	// テストモード用ピンを有効化
+	if(TEST_MODE)
+	{
+		gpio_init(TEST_PIN1);
+		gpio_init(TEST_PIN2);
+		gpio_set_dir(TEST_PIN1, GPIO_OUT);
+		gpio_set_dir(TEST_PIN2, GPIO_OUT);
+	}
 
 	// 各種バッファ初期化
 	initialize_ringbuffer(SIZE_EP_BUFFER, true, &buffer_ep_Lch);				// USB EP受け取り用
@@ -226,8 +246,10 @@ int main(void)
 
 	// ESS DAC SETUP
 	if (USE_ESS_DAC)
+	{
 		ess_dac_i2c_setup();
-
+		initialize_i2c_ringbuffer(SIZE_I2C_RINGBUFFER, &i2c_ringbuffer0);
+	}
 	// アップサンプリングフィルタを初期化する
 	init_upsampling_filter();
 
@@ -243,8 +265,29 @@ int main(void)
 		if (can_proceed_upsampling_core0)
 		{
 			can_proceed_upsampling_core0 = false;
+
+			if(TEST_MODE) gpio_put(TEST_PIN1, true);
 			upsampling_process_core0();
+			if(TEST_MODE) gpio_put(TEST_PIN1, false);
 		}
+
+		if (USE_ESS_DAC)
+		{
+			int64_t elapsed_us = absolute_time_diff_us(time_start_i2c_transfer, get_absolute_time());
+
+			if ((!i2c_dma_is_busy()) && (elapsed_us >= 5000))
+			{
+				uint16_t size = i2c_ringbuf_get_size_using(&i2c_ringbuffer0);
+				if (size >= SIZE_I2C_TRANSFER_UNIT)
+				{
+					uint8_t buffer[SIZE_I2C_RINGBUFFER];
+					i2c_ringbuf_read_array(buffer, SIZE_I2C_TRANSFER_UNIT, &i2c_ringbuffer0);
+					i2c_write_dma(I2C_PORT, I2C_ESS_DAC_ADDR >>1, buffer, SIZE_I2C_TRANSFER_UNIT, false);
+					time_start_i2c_transfer = get_absolute_time();
+				}
+			}
+		}
+
 		sleep_us(1);
 	}
 }

@@ -11,7 +11,7 @@ FS = 192000                 # アップサンプリング前の周波数[Hz]
 UPSAMPLING_RATIO = 2        # アップサンプリング倍率
 
 # フィルタのパラメータ
-N_TAP = 96                  # FIRフィルタのタップ数
+N_TAP = 128                  # FIRフィルタのタップ数
 FIR_KAISER_WINDOW = 85000   # カイザー窓の大きさ
 FREQ_CUTOFF = 48000         # カットオフ周波数[Hz]
 
@@ -97,7 +97,7 @@ y = signal.lfilter(b1_min, 1.0, x)
 w, h = signal.freqz(b1_min, 1.0, fs=FS * UPSAMPLING_RATIO)
 
 amp_dB = 20 * np.log10(np.abs(h))
-angles = np.unwrap(np.angle(h))
+angles = np.degrees(np.unwrap(np.angle(h)))
 freq = w
 
 # Figureを作成する(インパルス応答)

@@ -26,6 +26,7 @@ extern void ess_dac_i2c_setup(void);
 extern void ess_dac_initialize(void);
 extern void ess_dac_activate(void);
 
+extern void ess_dac_volume(void);
 extern bool get_ess_dac_mute(void);
 extern void ess_dac_mute(void);
 extern void ess_dac_unmute(void);

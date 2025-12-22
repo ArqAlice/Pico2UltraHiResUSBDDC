@@ -12,9 +12,9 @@ UPSAMPLING_RATIO = 2    # アップサンプリング倍率
 
 # フィルタのパラメータ
 WP = FS * 0.055         # 通過域遮断周波数[Hz]
-WS = FS * 0.5           # 阻止域遮断周波数[Hz]
+WS = FS * 0.45           # 阻止域遮断周波数[Hz]
 GPASS = 0.5             # 通過域最大損失量[dB]
-GSTOP = 150             # 阻止域最小減衰量[dB]
+GSTOP = 230             # 阻止域最小減衰量[dB]
 FTYPE = 'cheby2'        # フィルタタイプ(チェビシェフ2型)
 
 # シミュレーション条件
@@ -93,7 +93,7 @@ y = signal.sosfilt(sos, x)
 w, h = signal.sosfreqz(sos, fs=FS * UPSAMPLING_RATIO)
 
 amp_dB = 20 * np.log10(np.abs(h))
-angles = np.unwrap(np.angle(h))
+angles = np.degrees(np.unwrap(np.angle(h)))
 freq = w
 
 # Figureを作成する(インパルス応答)

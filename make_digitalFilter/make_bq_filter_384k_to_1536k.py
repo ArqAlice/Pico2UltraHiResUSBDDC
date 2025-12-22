@@ -93,7 +93,7 @@ y = signal.sosfilt(sos, x)
 w, h = signal.sosfreqz(sos, fs=FS * UPSAMPLING_RATIO)
 
 amp_dB = 20 * np.log10(np.abs(h))
-angles = np.unwrap(np.angle(h))
+angles = np.degrees(np.unwrap(np.angle(h)))
 freq = w
 
 # Figureを作成する(インパルス応答)

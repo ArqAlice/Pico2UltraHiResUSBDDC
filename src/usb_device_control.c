@@ -1,29 +1,29 @@
 /*
-* Copyright (c) 2025 ArqAlice 
-*
-* Released under the MIT license
-* https://opensource.org/licenses/mit-license.php
-*/
+ * Copyright (c) 2025 ArqAlice
+ *
+ * Released under the MIT license
+ * https://opensource.org/licenses/mit-license.php
+ */
 
 #include "usb_device_control.h"
 #include "pico/usb_device.h"
 #include "lufa/AudioClassCommon.h"
+#include <arm_math.h>
 #include "common.h"
 #include "upsampling.h"
 
 // todo make descriptor strings should probably belong to the configs
 static char *descriptor_strings[] =
 	{
-		"ArqAlice",
-		"Pico2 UltraHiRes USB-DDC",
-		"y.tomi0131@gmail.com:"};
+		MFG_NAME,
+		DEVICE_NAME,
+		WEBSITE_ADDR};
 
 // todo fix these
-// #define VENDOR_ID   0x2e8au
-// #define PRODUCT_ID  0xfeddu
-
-#define VENDOR_ID (0x16c0u)
-#define PRODUCT_ID (0x27e0u)
+// VENDOR_ID
+// PRODUCT_ID
+#define VENDOR_ID (0x2e8au)
+#define PRODUCT_ID (0xfeddu)
 
 #define AUDIO_OUT_ENDPOINT (0x01U)
 #define AUDIO_IN_ENDPOINT 0x82U
@@ -40,6 +40,7 @@ static char *descriptor_strings[] =
 #define ENDPOINT_FREQ_CONTROL (1u)
 
 extern uint32_t now_playing;
+extern volatile bool is_high_power_mode;
 
 static void _as_audio_packet(struct usb_endpoint *ep);
 
@@ -198,7 +199,8 @@ static const struct audio_device_config audio_device_config =
 					.bSampleFrequencyType = count_of(audio_device_config.as_audio.format.freqs),
 				},
 				.freqs = {
-					AUDIO_SAMPLE_FREQ(44100), AUDIO_SAMPLE_FREQ(48000),
+					AUDIO_SAMPLE_FREQ(44100),
+					AUDIO_SAMPLE_FREQ(48000),
 					AUDIO_SAMPLE_FREQ(88200),
 					AUDIO_SAMPLE_FREQ(96000),
 				},
@@ -260,12 +262,7 @@ static const struct audio_device_config audio_device_config =
 					.bBitResolution = 24, // 24bit
 					.bSampleFrequencyType = count_of(audio_device_config.as_audio_2.format.freqs),
 				},
-				.freqs = {
-					AUDIO_SAMPLE_FREQ(44100),
-					AUDIO_SAMPLE_FREQ(48000),
-					AUDIO_SAMPLE_FREQ(88200),
-					AUDIO_SAMPLE_FREQ(96000)
-				},
+				.freqs = {AUDIO_SAMPLE_FREQ(44100), AUDIO_SAMPLE_FREQ(48000), AUDIO_SAMPLE_FREQ(88200), AUDIO_SAMPLE_FREQ(96000)},
 			},
 		},
 		.ep1_2 = {.core = {
@@ -336,7 +333,7 @@ uint16_t buffer_length_limiter(uint32_t freq, uint16_t length)
 	int32_t limit_length = get_size_remain(&buffer_upsr_data_Lch_0) / get_ratio_upsampling_core0(freq);
 
 	limit_length = saturation_i32(limit_length, SIZE_EP_BUFFER, 0);
-	
+
 	uint16_t output = length;
 	if (length > limit_length)
 	{
@@ -348,7 +345,7 @@ uint16_t buffer_length_limiter(uint32_t freq, uint16_t length)
 
 // USB EPバッファ取得処理
 uint16_t __not_in_flash_func(usb_ep_data_acquire)(uint bit_depth, int16_t *ep, uint in_length,
-											 int32_t *buf_left_ch, int32_t *buf_right_ch)
+												  float *buf_left_ch, float *buf_right_ch)
 {
 	uint sample_num;
 	uint16_t *u16_ep = (uint16_t *)ep; // 24bitデータ処理のため int16_t -> uint16_t 型に変更
@@ -364,10 +361,10 @@ uint16_t __not_in_flash_func(usb_ep_data_acquire)(uint bit_depth, int16_t *ep, u
 		sample_num = length;
 		while (sample_num--)
 		{
-			data = ((int32_t)(*u16_ep++) | (*u16_ep++ << 16)) >> 0;
-			buf_left_ch[count] = (int32_t)((float)data * audio_state.vol_float);
-			data = ((int32_t)(*u16_ep++) | (*u16_ep++ << 16)) >> 0;
-			buf_right_ch[count] = (int32_t)((float)data * audio_state.vol_float);
+			data = ((int32_t)(*u16_ep++) | ((int32_t)*u16_ep++ << 16)) >> 0;
+			buf_left_ch[count] = (float)data;
+			data = ((int32_t)(*u16_ep++) | ((int32_t)*u16_ep++ << 16)) >> 0;
+			buf_right_ch[count] = (float)data;
 			count++;
 		}
 		break;
@@ -378,10 +375,10 @@ uint16_t __not_in_flash_func(usb_ep_data_acquire)(uint bit_depth, int16_t *ep, u
 		sample_num = length;
 		while (sample_num--)
 		{
-			data = ((int32_t)(*u16_ep++ << 8) | (*u16_ep << 24)) >> 0;
-			buf_left_ch[count] = (int32_t)((float)data * audio_state.vol_float);
-			data = ((int32_t)(*u16_ep++ & 0xff00) | (*u16_ep++ << 16)) >> 0;
-			buf_right_ch[count] = (int32_t)((float)data * audio_state.vol_float);
+			data = ((int32_t)(*u16_ep++ << 8) | ((int32_t)*u16_ep << 24)) >> 0;
+			buf_left_ch[count] = (float)data;
+			data = ((int32_t)(*u16_ep++ & 0xff00) | ((int32_t)*u16_ep++ << 16)) >> 0;
+			buf_right_ch[count] = (float)data;
 			count++;
 		}
 		break;
@@ -394,9 +391,9 @@ uint16_t __not_in_flash_func(usb_ep_data_acquire)(uint bit_depth, int16_t *ep, u
 		while (sample_num--)
 		{
 			data = ((int32_t)*ep++) << 16;
-			buf_left_ch[count] = (int32_t)((float)data * audio_state.vol_float);
+			buf_left_ch[count] = (float)data;
 			data = ((int32_t)*ep++) << 16;
-			buf_right_ch[count] = (int32_t)((float)data * audio_state.vol_float);
+			buf_right_ch[count] = (float)data;
 			count++;
 		}
 		break;
@@ -554,7 +551,7 @@ static void audio_cmd_packet(struct usb_endpoint *ep)
 				audio_state.mute = buffer->data[0];
 				if (audio_state.mute == true)
 				{
-					//if(USE_ESS_DAC && KIND_ESS_DAC == ES9038Q2M)
+					// if(USE_ESS_DAC && KIND_ESS_DAC == ES9038Q2M)
 					//	ess_dac_mute();
 					clear_ringbuffer(&buffer_ep_Lch);
 					clear_ringbuffer(&buffer_ep_Rch);
@@ -579,7 +576,7 @@ static void audio_cmd_packet(struct usb_endpoint *ep)
 				if (audio_state.freq != new_freq)
 				{
 					audio_state.freq = new_freq;
-					if(USE_ESS_DAC && KIND_ESS_DAC == ES9038Q2M)
+					if (USE_ESS_DAC && KIND_ESS_DAC == ES9038Q2M)
 						ess_dac_mute();
 					clear_ringbuffer(&buffer_ep_Lch);
 					clear_ringbuffer(&buffer_ep_Rch);
@@ -743,16 +740,80 @@ static void _as_audio_packet(struct usb_endpoint *ep)
 	// ※uint8データ長をint16データ長(1/2)に変換
 	uint length = (usb_buffer->data_len) >> 1;
 
-	int32_t ep_Lch[SIZE_EP_BUFFER];
-	int32_t ep_Rch[SIZE_EP_BUFFER];
+	float ep_Lch[SIZE_EP_BUFFER];
+	float ep_Rch[SIZE_EP_BUFFER];
 
 	// usb epデータコピー
 	length = usb_ep_data_acquire(audio_state.bit_depth, ep_in, length, ep_Lch, ep_Rch);
 
 	now_playing++; // この処理が来ているかどうかを確認するための変数
+	
+	float volume = audio_state.vol_float;
+	
+	switch(audio_state.freq)
+	{
+		case 192000:
+		case 176400:
+			if (!CORE0_UPSAMPLING_192K)
+			{
+				arm_scale_f32(ep_Lch, volume * DEFAULT_GAIN_RATIO * 2., ep_Lch, length);
+				arm_scale_f32(ep_Rch, volume * DEFAULT_GAIN_RATIO * 2., ep_Rch, length);
+			}
+			else
+			{
+				arm_scale_f32(ep_Lch, volume * DEFAULT_GAIN_RATIO, ep_Lch, length);
+				arm_scale_f32(ep_Rch, volume * DEFAULT_GAIN_RATIO, ep_Rch, length);
+			}
+			break;
 
-	ringbuf_write_array_no_spinlock(ep_Lch, length, &buffer_ep_Lch);
-	ringbuf_write_array_no_spinlock(ep_Rch, length, &buffer_ep_Rch);
+		case 96000:
+		case 88200:
+			if (!CORE0_UPSAMPLING_192K)
+			{
+				if (is_high_power_mode)
+				{
+					arm_scale_f32(ep_Lch, volume * DEFAULT_GAIN_RATIO * 4., ep_Lch, length);
+					arm_scale_f32(ep_Rch, volume * DEFAULT_GAIN_RATIO * 4., ep_Rch, length);
+				}
+				else
+				{
+					arm_scale_f32(ep_Lch, volume * DEFAULT_GAIN_RATIO * 2., ep_Lch, length);
+					arm_scale_f32(ep_Rch, volume * DEFAULT_GAIN_RATIO * 2., ep_Rch, length);
+				}
+			}
+			else
+			{
+				arm_scale_f32(ep_Lch, volume * DEFAULT_GAIN_RATIO * 2., ep_Lch, length);
+				arm_scale_f32(ep_Rch, volume * DEFAULT_GAIN_RATIO * 2., ep_Rch, length);
+			}
+			break;
+
+		case 48000:
+		case 44100:
+		default:
+			if (!CORE0_UPSAMPLING_192K)
+			{
+				if (is_high_power_mode)
+				{
+					arm_scale_f32(ep_Lch, volume * DEFAULT_GAIN_RATIO * 8., ep_Lch, length);
+					arm_scale_f32(ep_Rch, volume * DEFAULT_GAIN_RATIO * 8., ep_Rch, length);
+				}
+				else
+				{
+					arm_scale_f32(ep_Lch, volume * DEFAULT_GAIN_RATIO * 4., ep_Lch, length);
+					arm_scale_f32(ep_Rch, volume * DEFAULT_GAIN_RATIO * 4., ep_Rch, length);
+				}
+			}
+			else
+			{
+				arm_scale_f32(ep_Lch, volume * DEFAULT_GAIN_RATIO * 4., ep_Lch, length);
+				arm_scale_f32(ep_Rch, volume * DEFAULT_GAIN_RATIO * 4., ep_Rch, length);
+			}
+			break;
+	}
+
+	ringbuf_write_array_no_spinlock((int32_t*)ep_Lch, length, &buffer_ep_Lch);
+	ringbuf_write_array_no_spinlock((int32_t*)ep_Rch, length, &buffer_ep_Rch);
 
 	// usb epデータコピー完了処理
 	usb_grow_transfer(ep->current_transfer, 1);

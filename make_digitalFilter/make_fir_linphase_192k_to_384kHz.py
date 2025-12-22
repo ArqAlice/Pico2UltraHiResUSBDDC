@@ -7,13 +7,13 @@ from scipy import interpolate
 import matplotlib.pyplot as plt
 
 # フィルタの基本条件
-FS = 96000                  # アップサンプリング前の周波数[Hz]
+FS = 192000                  # アップサンプリング前の周波数[Hz]
 UPSAMPLING_RATIO = 2        # アップサンプリング倍率
 
 # フィルタのパラメータ
-N_TAP = 48                 # FIRフィルタのタップ数
-FIR_KAISER_WINDOW = 40000   # カイザー窓の大きさ
-FREQ_CUTOFF = 24000         # カットオフ周波数[Hz]
+N_TAP = 56                 # FIRフィルタのタップ数
+FIR_KAISER_WINDOW = 70000   # カイザー窓の大きさ
+FREQ_CUTOFF = 48000         # カットオフ周波数[Hz]
 
 # シミュレーション条件
 TIME_IMPULSE_SIMU = 0.0012  # インパルス応答解析時間[s]

@@ -12,96 +12,6 @@
 #include "transmit_to_dac.h"
 #include "nonblocking_i2c.h"
 
-extern inline int32_t saturation_i32(int32_t in, int32_t max, int32_t min)
-{
-	if (in > max)
-		return max;
-	else if (in < min)
-		return min;
-	return in;
-}
-
-extern inline float saturation_f32(float in, float max, float min)
-{
-	if (in > max)
-		return max;
-	else if (in < min)
-		return min;
-	return in;
-}
-
-// int32_t型をfloat型にまとめてキャスト
-inline void int32_to_float_array(int32_t *input, float *output, uint32_t length)
-{
-    for(int i=0; i<length; i++)
-        output[i] = (float)input[i];
-}
-
-// float型をint32_t型にまとめてキャスト
-inline void float_to_int32_array(float *input, int32_t *output, uint32_t length)
-{
-    for(int i=0; i<length; i++)
-        output[i] = (int32_t)input[i];
-}
-
-// アップサンプリング倍率取得関数
-extern inline uint16_t get_ratio_upsampling_core0(uint32_t freq)
-{
-	uint16_t ratio;
-	switch (freq)
-	{
-	case 192000:
-	case 176400:
-		ratio = RATIO_UPSAMPLING_192K;
-		break;
-	case 96000:
-	case 88200:
-		ratio = RATIO_UPSAMPLING_96K;
-		break;
-	case 48000:
-	case 44100:
-	default:
-		ratio = RATIO_UPSAMPLING_48K;
-		break;
-	}
-
-	if (!CORE0_UPSAMPLING_192K)
-		return ratio;
-	else
-		return ratio >> 1;
-}
-
-inline uint16_t ratio_to_bitshift(uint16_t ratio)
-{
-	switch (ratio)
-	{
-	case 2:
-		return 1;
-	case 4:
-		return 2;
-	case 8:
-		return 3;
-	default:
-		return 0;
-	}
-}
-
-inline uint16_t get_ratio_upsampling_core1(void)
-{
-	if (is_high_power_mode && (!BYPASS_CORE1_UPSAMPLING) && (!CORE0_UPSAMPLING_192K))
-	{
-		return RATIO_UPSAMPLING_CORE1;
-	}
-	else if ((!BYPASS_CORE1_UPSAMPLING) && (!CORE0_UPSAMPLING_192K))
-	{
-		return RATIO_UPSAMPLING_CORE1 >> 1;
-	}
-	else // bypass Core1 upsampling
-	{
-		return 1;
-	}
-}
-
 void renew_cpu_clock(bool is_high_power)
 {
 	// CPUクロックを再設定
@@ -115,12 +25,14 @@ void renew_cpu_clock(bool is_high_power)
 			vreg_set_voltage(V_CORE_HI);
 			busy_wait_us(100);
 			set_sys_clock_khz(SYS_CLOCK_KHZ_48K, true);
+			busy_wait_us(50);
 		}
 		else
 		{
 			set_sys_clock_khz(SYS_CLOCK_KHZ_LP_48K, true);
 			busy_wait_us(100);
 			vreg_set_voltage(V_CORE_LO);
+			busy_wait_us(50);
 		}
 		break;
 	case 176400:
@@ -132,12 +44,14 @@ void renew_cpu_clock(bool is_high_power)
 			vreg_set_voltage(V_CORE_HI);
 			busy_wait_us(100);
 			set_sys_clock_khz(SYS_CLOCK_KHZ_44K, true);
+			busy_wait_us(50);
 		}
 		else
 		{
 			set_sys_clock_khz(SYS_CLOCK_KHZ_LP_44K, true);
 			busy_wait_us(100);
 			vreg_set_voltage(V_CORE_LO);
+			busy_wait_us(50);
 		}
 		break;
 	}
@@ -164,7 +78,7 @@ void renew_clock(bool is_high_power)
 // DACを設定するためのI2C
 void setup_I2C(void)
 {
-	// running at 100kHz.
+	// run at 100kHz.
 	i2c_init(I2C_PORT, 104 * 1000);
 	gpio_set_function(I2C_SDA, GPIO_FUNC_I2C);
 	gpio_set_function(I2C_SCL, GPIO_FUNC_I2C);
@@ -176,8 +90,21 @@ void setup_I2C(void)
 
 void volume_control(void)
 {
-	//static float volume_slow = MIN_VOLUME;
-	//volume_slow += ((float)audio_state.acq_volume - volume_slow) * 0.85;
+	if (!audio_state.mute)
+	{
+		if (ENABLE_ESS_DAC_VOLUME)
+		{
+			audio_state.vol_float = 1.0;
+			ess_dac_volume();
+		}
+		else
+		{
+			audio_state.vol_float = saturation_f32(pow(10, (float)audio_state.acq_volume / (float)VOLUME_RESOLUTION / 20.0), 1.0, 0);
+		}
+	}
+	else
+	{
+		audio_state.vol_float = 0.;
+	}
 
-	audio_state.vol_float = saturation_f32(pow(10, (float)audio_state.acq_volume / VOLUME_RESOLUTION / 10.0), 1.0, 0);
 }

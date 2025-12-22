@@ -17,53 +17,73 @@
 
 // User Configurable ------------------------------------------------------------------
 
+// Test mode
+#define TEST_MODE (true)
+#define TEST_PIN1 (1)
+#define TEST_PIN2 (2)
+
+// String Desc.
+#define MFG_NAME ("ArqAlice")
+#define DEVICE_NAME ("Pico2 UltraHiRes USB-DDC")
+#define WEBSITE_ADDR ("y.tomi0131@gmail.com:")
+
+// FIR Filter Type: LINEAR or MINIMUM
+#define LINEAR
+
 // Faster I2S slew rate
-#define I2S_SLEWRATE_FAST_ENABLE (false)
+#define I2S_SLEWRATE_FAST_ENABLE (true)
 
 // Enhancement I2S signal output current
 #define I2S_STRENGTH_REINFORCE_ENABLE (true)
 
 // Power Mode Switch Pin
-// The Hi-Power Mode outputs 1536kHz/1411.2kHz and is only supported by a limited number of DACs.
-#define POWER_MODE_SWITCH_PIN (18)
-#define ALWAYS_HIGH_POWER (false)
+// The Hi-Power Mode, Core0 uses 384KHz FIR Filter
+#define POWER_MODE_SWITCH_PIN (0)
+#define ALWAYS_HIGH_POWER (true)
 #define ALWAYS_LOW_POWER (false)
 
 // I2C
 #define I2C_PORT (i2c1)
-#define I2C_SDA (26)
-#define I2C_SCL (27)
+#define I2C_SDA (6)
+#define I2C_SCL (7)
 
 // I2S Pin : sideset0:BCLK, sideset1:LRCK (if No Changed)
 #define I2S_SIDESET_CHANGE (false)
-#define I2S_DATA_PIN (20)
-#define I2S_SIDESET_BASE (21)
+#define I2S_DATA_PIN (26)
+#define I2S_SIDESET_BASE (27)
 
 // Upsampler control
 #define BYPASS_CORE1_UPSAMPLING (true)
 #define CORE0_UPSAMPLING_192K (false)
-#define DEFAULT_GAIN_RATIO (0.6) // Adjust this according to your filter to avoid clipping.
+#define ENABLE_1536KHZ_OUTPUT (false)
+#define DEFAULT_GAIN_RATIO (0.72) // Adjust this according to your filter to avoid clipping.
 
 // ESS DAC Specific
 #define USE_ESS_DAC (false)
 #define KIND_ESS_DAC (ESS_DAC_NONE)
 #define I2C_ESS_DAC_ADDR (ADDR0_NONE)
 #define ENABLE_ES9038Q2M_DEPOP (false)
+#define ENABLE_ESS_DAC_VOLUME (false)
+#define ENABLE_ESS_DAC_THD_COMPEN (false)
+#define ESS_THD_COMPEN_C2 (0) // 16bit signed int
+#define ESS_THD_COMPEN_C3 (0) // 16bit signed int
+#define ESS_DPLL_BANDWIDTH (0x80) // 0~255, 0 is DPLL off
+#define ESS_DPLL_LOCKSPEED (2)   // 0~16
 #define TIME_ES9038Q2M_DEPOP_USEC (40000)
-#define DAC_ENABLE_PIN (28)
+#define DAC_ENABLE_PIN (5)
 
 // Other Function
-#define USE_INRUSH_CURRENT_REDUCER (false)
-#define INRUSH_CURRENT_REDUCER_PIN (3)
-#define INRUSH_CURRENT_REDUCER_TIME_US (50000)
+#define USE_EXT_POWER_ENABLE (false)
+#define EXT_POWER_ENABLE_PIN (3)
+#define BOOT_WAIT_TIME_US (50000)
 
 // User Configurable end ------------------------------------------------------------
 
 // システムクロック
-#define SYS_CLOCK_KHZ_44K (307200)
-#define SYS_CLOCK_KHZ_48K (312000)
-#define SYS_CLOCK_KHZ_LP_44K (208800)
-#define SYS_CLOCK_KHZ_LP_48K (208800)
+#define SYS_CLOCK_KHZ_44K (282000)
+#define SYS_CLOCK_KHZ_48K (307200)
+#define SYS_CLOCK_KHZ_LP_44K (208000)
+#define SYS_CLOCK_KHZ_LP_48K (208000)
 // #define SYS_CLOCK_KHZ 208800 //  208M8/48k/64 = 67.968->68, 208M8/44k1/64 = 73.979->74
 // #define SYS_CLOCK_KHZ 150000
 
@@ -117,6 +137,10 @@
 #define MAX_VOLUME (0 * VOLUME_RESOLUTION)
 #define DEFAULT_VOLUME (0 * VOLUME_RESOLUTION)
 
+// ノンブロッキングI2C
+#define SIZE_I2C_RINGBUFFER (16)
+#define SIZE_I2C_TRANSFER_UNIT (2)
+
 typedef struct
 {
 	uint32_t freq;		// 周波数系列軸・倍率軸用(既存)
@@ -139,13 +163,6 @@ extern volatile bool is_high_power_mode;
 extern uint32_t now_playing;
 extern uint16_t length_remain_to_I2S_FIFO;
 
-extern inline int32_t saturation_i32(int32_t in, int32_t max, int32_t min);
-extern inline float saturation_f32(float in, float max, float min);
-extern inline void int32_to_float_array(int32_t *input, float *output, uint32_t length);
-extern inline void float_to_int32_array(float *input, int32_t *output, uint32_t length);
-extern inline uint16_t get_ratio_upsampling_core0(uint32_t freq);
-extern inline uint16_t get_ratio_upsampling_core1(void);
-inline uint16_t ratio_to_bitshift(uint16_t ratio);
 extern uint32_t calc_pwm_period_us(float period_us, uint16_t prescale);
 extern void setup_I2C(void);
 extern void volume_control(void);
@@ -153,5 +170,97 @@ extern void volume_control(void);
 extern void renew_clock(bool is_high_power);
 extern void cancel_timer0(void);
 extern void restart_timer0(void);
+
+inline int32_t saturation_i32(int32_t in, int32_t max, int32_t min)
+{
+	if (in > max)
+		return max;
+	else if (in < min)
+		return min;
+	return in;
+}
+
+inline float saturation_f32(float in, float max, float min)
+{
+	if (in > max)
+		return max;
+	else if (in < min)
+		return min;
+	return in;
+}
+
+// int32_t型をfloat型にまとめてキャスト
+inline void int32_to_float_array(int32_t *input, float *output, uint32_t length)
+{
+    for(int i=0; i<length; i++)
+        output[i] = (float)input[i];
+}
+
+// float型をint32_t型にまとめてキャスト
+inline void float_to_int32_array(float *input, int32_t *output, uint32_t length)
+{
+    for(int i=0; i<length; i++)
+        output[i] = (int32_t)input[i];
+}
+
+// アップサンプリング倍率をビットシフト量に変換する関数
+inline uint16_t ratio_to_bitshift(uint16_t ratio)
+{
+	switch (ratio)
+	{
+	case 2:
+		return 1;
+	case 4:
+		return 2;
+	case 8:
+		return 3;
+	default:
+		return 0;
+	}
+}
+
+// アップサンプリング倍率取得関数(Core0)
+inline uint16_t get_ratio_upsampling_core0(uint32_t freq)
+{
+	uint16_t ratio;
+	switch (freq)
+	{
+	case 192000:
+	case 176400:
+		ratio = RATIO_UPSAMPLING_192K;
+		break;
+	case 96000:
+	case 88200:
+		ratio = RATIO_UPSAMPLING_96K;
+		break;
+	case 48000:
+	case 44100:
+	default:
+		ratio = RATIO_UPSAMPLING_48K;
+		break;
+	}
+
+	if (!CORE0_UPSAMPLING_192K)
+		return ratio;
+	else
+		return ratio >> 1;
+}
+
+// アップサンプリング倍率取得関数(Core1)
+inline uint16_t get_ratio_upsampling_core1(void)
+{
+	if (ENABLE_1536KHZ_OUTPUT && is_high_power_mode && (!BYPASS_CORE1_UPSAMPLING) && (!CORE0_UPSAMPLING_192K))
+	{
+		return RATIO_UPSAMPLING_CORE1;
+	}
+	else if ((!BYPASS_CORE1_UPSAMPLING) && (!CORE0_UPSAMPLING_192K))
+	{
+		return RATIO_UPSAMPLING_CORE1 >> 1;
+	}
+	else // bypass Core1 upsampling
+	{
+		return 1;
+	}
+}
 
 #endif
