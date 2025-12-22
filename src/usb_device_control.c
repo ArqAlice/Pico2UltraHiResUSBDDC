@@ -748,19 +748,21 @@ static void _as_audio_packet(struct usb_endpoint *ep)
 
 	now_playing++; // この処理が来ているかどうかを確認するための変数
 	
+	float volume = audio_state.vol_float;
+	
 	switch(audio_state.freq)
 	{
 		case 192000:
 		case 176400:
 			if (!CORE0_UPSAMPLING_192K)
 			{
-				arm_scale_f32(ep_Lch, audio_state.vol_float * DEFAULT_GAIN_RATIO * 2., ep_Lch, length);
-				arm_scale_f32(ep_Rch, audio_state.vol_float * DEFAULT_GAIN_RATIO * 2., ep_Rch, length);
+				arm_scale_f32(ep_Lch, volume * DEFAULT_GAIN_RATIO * 2., ep_Lch, length);
+				arm_scale_f32(ep_Rch, volume * DEFAULT_GAIN_RATIO * 2., ep_Rch, length);
 			}
 			else
 			{
-				arm_scale_f32(ep_Lch, audio_state.vol_float * DEFAULT_GAIN_RATIO, ep_Lch, length);
-				arm_scale_f32(ep_Rch, audio_state.vol_float * DEFAULT_GAIN_RATIO, ep_Rch, length);
+				arm_scale_f32(ep_Lch, volume * DEFAULT_GAIN_RATIO, ep_Lch, length);
+				arm_scale_f32(ep_Rch, volume * DEFAULT_GAIN_RATIO, ep_Rch, length);
 			}
 			break;
 
@@ -770,19 +772,19 @@ static void _as_audio_packet(struct usb_endpoint *ep)
 			{
 				if (is_high_power_mode)
 				{
-					arm_scale_f32(ep_Lch, audio_state.vol_float * DEFAULT_GAIN_RATIO * 4., ep_Lch, length);
-					arm_scale_f32(ep_Rch, audio_state.vol_float * DEFAULT_GAIN_RATIO * 4., ep_Rch, length);
+					arm_scale_f32(ep_Lch, volume * DEFAULT_GAIN_RATIO * 4., ep_Lch, length);
+					arm_scale_f32(ep_Rch, volume * DEFAULT_GAIN_RATIO * 4., ep_Rch, length);
 				}
 				else
 				{
-					arm_scale_f32(ep_Lch, audio_state.vol_float * DEFAULT_GAIN_RATIO * 2., ep_Lch, length);
-					arm_scale_f32(ep_Rch, audio_state.vol_float * DEFAULT_GAIN_RATIO * 2., ep_Rch, length);
+					arm_scale_f32(ep_Lch, volume * DEFAULT_GAIN_RATIO * 2., ep_Lch, length);
+					arm_scale_f32(ep_Rch, volume * DEFAULT_GAIN_RATIO * 2., ep_Rch, length);
 				}
 			}
 			else
 			{
-				arm_scale_f32(ep_Lch, audio_state.vol_float * DEFAULT_GAIN_RATIO * 2., ep_Lch, length);
-				arm_scale_f32(ep_Rch, audio_state.vol_float * DEFAULT_GAIN_RATIO * 2., ep_Rch, length);
+				arm_scale_f32(ep_Lch, volume * DEFAULT_GAIN_RATIO * 2., ep_Lch, length);
+				arm_scale_f32(ep_Rch, volume * DEFAULT_GAIN_RATIO * 2., ep_Rch, length);
 			}
 			break;
 
@@ -793,19 +795,19 @@ static void _as_audio_packet(struct usb_endpoint *ep)
 			{
 				if (is_high_power_mode)
 				{
-					arm_scale_f32(ep_Lch, audio_state.vol_float * DEFAULT_GAIN_RATIO * 8., ep_Lch, length);
-					arm_scale_f32(ep_Rch, audio_state.vol_float * DEFAULT_GAIN_RATIO * 8., ep_Rch, length);
+					arm_scale_f32(ep_Lch, volume * DEFAULT_GAIN_RATIO * 8., ep_Lch, length);
+					arm_scale_f32(ep_Rch, volume * DEFAULT_GAIN_RATIO * 8., ep_Rch, length);
 				}
 				else
 				{
-					arm_scale_f32(ep_Lch, audio_state.vol_float * DEFAULT_GAIN_RATIO * 4., ep_Lch, length);
-					arm_scale_f32(ep_Rch, audio_state.vol_float * DEFAULT_GAIN_RATIO * 4., ep_Rch, length);
+					arm_scale_f32(ep_Lch, volume * DEFAULT_GAIN_RATIO * 4., ep_Lch, length);
+					arm_scale_f32(ep_Rch, volume * DEFAULT_GAIN_RATIO * 4., ep_Rch, length);
 				}
 			}
 			else
 			{
-				arm_scale_f32(ep_Lch, audio_state.vol_float * DEFAULT_GAIN_RATIO * 4., ep_Lch, length);
-				arm_scale_f32(ep_Rch, audio_state.vol_float * DEFAULT_GAIN_RATIO * 4., ep_Rch, length);
+				arm_scale_f32(ep_Lch, volume * DEFAULT_GAIN_RATIO * 4., ep_Lch, length);
+				arm_scale_f32(ep_Rch, volume * DEFAULT_GAIN_RATIO * 4., ep_Rch, length);
 			}
 			break;
 	}
