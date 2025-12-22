@@ -4,9 +4,13 @@ from dataclasses import dataclass
 import numpy as np
 from scipy import signal
 
-FFT_N = 512
+FFT_N_LOW = 256
+FFT_N_HIGH = 512
+FFT_INPUT_FS_SPLIT = 88200.0
 TARGET_ATTEN_DB = 145.0
 FREQZ_POINTS = 65536
+# Keep block length reasonable to avoid starving the EP ringbuffer.
+MAX_INPUT_LEN = 480
 
 
 @dataclass
@@ -18,10 +22,7 @@ class Spec:
     up_ratio: int
     atten_hp_db: float = TARGET_ATTEN_DB
     atten_lp_db: float = 110.0
-
-    @property
-    def max_taps(self) -> int:
-        return self.up_ratio * FFT_N
+    fft_n: int = 0
 
 
 SPECS = [
@@ -57,16 +58,25 @@ def measure_stop_atten_db(taps: np.ndarray, fs_out: float, f_stop: float) -> flo
     return 20.0 * np.log10(dc_gain / stop_mag)
 
 
-def design_filter(spec: Spec, atten_db: float):
+def select_fft_n(spec: Spec) -> int:
+    input_fs = spec.fs_out / spec.up_ratio
+    return FFT_N_LOW if input_fs >= FFT_INPUT_FS_SPLIT else FFT_N_HIGH
+
+
+def design_filter(spec: Spec, atten_db: float, fft_n: int):
     width = spec.f_stop - spec.f_pass
     norm_width = width / (spec.fs_out / 2.0)
     taps_guess, beta = signal.kaiserord(atten_db, norm_width)
     taps_guess = max(2, int(taps_guess))
     taps_guess = align_to_multiple(taps_guess, spec.up_ratio)
-    taps_guess = min(taps_guess, spec.max_taps)
+    min_phase_len = max(1, fft_n - MAX_INPUT_LEN + 1)
+    min_taps = min_phase_len * spec.up_ratio
+    taps_guess = max(taps_guess, min_taps)
+    max_taps = spec.up_ratio * fft_n
+    taps_guess = min(taps_guess, max_taps)
 
     best = None
-    for taps_count in range(taps_guess, spec.max_taps + 1, spec.up_ratio):
+    for taps_count in range(taps_guess, max_taps + 1, spec.up_ratio):
         taps = signal.firwin(taps_count, spec.f_pass, window=("kaiser", beta), fs=spec.fs_out)
         taps *= spec.up_ratio
         stop_att = measure_stop_atten_db(taps, spec.fs_out, spec.f_stop)
@@ -78,14 +88,14 @@ def design_filter(spec: Spec, atten_db: float):
     return best
 
 
-def build_h_fft(taps: np.ndarray, up_ratio: int) -> np.ndarray:
+def build_h_fft(taps: np.ndarray, up_ratio: int, fft_n: int) -> np.ndarray:
     phase_len = taps.shape[0] // up_ratio
-    h_fft = np.zeros((up_ratio, FFT_N * 2), dtype=np.float32)
+    h_fft = np.zeros((up_ratio, fft_n * 2), dtype=np.float32)
     for phase in range(up_ratio):
         phase_taps = taps[phase::up_ratio]
         if phase_taps.shape[0] != phase_len:
             raise ValueError("phase length mismatch")
-        padded = np.zeros(FFT_N, dtype=np.float32)
+        padded = np.zeros(fft_n, dtype=np.float32)
         padded[:phase_len] = phase_taps.astype(np.float32)
         H = np.fft.fft(padded)
         h_fft[phase, 0::2] = H.real.astype(np.float32)
@@ -115,13 +125,15 @@ def main():
     source_path = os.path.join(out_dir, "fft_fir_coef.c")
 
     profiles = []
+    max_fft_n = 0
     max_phase_len = 0
     max_input_len = 0
     max_output_len = 0
 
     for spec in SPECS:
         for suffix, atten in (("hp", spec.atten_hp_db), ("lp", spec.atten_lp_db)):
-            result = design_filter(spec, atten)
+            fft_n = spec.fft_n or select_fft_n(spec)
+            result = design_filter(spec, atten, fft_n)
             if result is None:
                 raise RuntimeError(f"Failed to design filter for {spec.name}_{suffix}")
             taps, beta, stop_att = result
@@ -129,16 +141,17 @@ def main():
             if taps_count % spec.up_ratio != 0:
                 raise RuntimeError("tap count not divisible by up_ratio")
             phase_len = taps_count // spec.up_ratio
-            input_len = FFT_N - (phase_len - 1)
+            input_len = fft_n - (phase_len - 1)
             if input_len <= 0:
                 raise RuntimeError("input_len must be positive")
-            h_fft = build_h_fft(taps, spec.up_ratio)
+            h_fft = build_h_fft(taps, spec.up_ratio, fft_n)
             dc_gain = calc_dc_gain(h_fft)
             gain_ratio = 1.0 / dc_gain if abs(dc_gain) > 1e-9 else 1.0
             profiles.append(
                 {
                     "spec": spec,
                     "suffix": suffix,
+                    "fft_n": fft_n,
                     "taps_count": taps_count,
                     "phase_len": phase_len,
                     "input_len": input_len,
@@ -148,6 +161,7 @@ def main():
                     "gain_ratio": gain_ratio,
                 }
             )
+            max_fft_n = max(max_fft_n, fft_n)
             max_phase_len = max(max_phase_len, phase_len)
             max_input_len = max(max_input_len, input_len)
             max_output_len = max(max_output_len, input_len * spec.up_ratio)
@@ -159,7 +173,8 @@ def main():
         hf.write("#ifndef _FFT_FIR_COEF_H_\n")
         hf.write("#define _FFT_FIR_COEF_H_\n\n")
         hf.write("#include <stdint.h>\n\n")
-        hf.write(f"#define FFT_FIR_N ({FFT_N})\n")
+        hf.write(f"#define FFT_FIR_MAX_N ({max_fft_n})\n")
+        hf.write("#define FFT_FIR_MAX_COMPLEX_LEN (FFT_FIR_MAX_N * 2)\n")
         hf.write(f"#define FFT_FIR_MAX_PHASE_LEN ({max_phase_len})\n")
         hf.write(f"#define FFT_FIR_MAX_INPUT ({max_input_len})\n")
         hf.write(f"#define FFT_FIR_MAX_OUTPUT ({max_output_len})\n\n")
@@ -167,6 +182,7 @@ def main():
         hf.write("    uint32_t fs_out_hz;\n")
         hf.write("    uint32_t passband_hz;\n")
         hf.write("    uint32_t stopband_hz;\n")
+        hf.write("    uint16_t fft_len;\n")
         hf.write("    uint16_t up_ratio;\n")
         hf.write("    uint16_t phase_len;\n")
         hf.write("    uint16_t input_len;\n")
@@ -200,7 +216,7 @@ def main():
             input_len = profile["input_len"]
             stop_att = profile["stop_att"]
             h_fft = profile["h_fft"]
-            cf.write(f"/* {spec.name}_{suffix}: taps={taps_count}, phase_len={phase_len}, input_len={input_len}, stop_att={stop_att:.2f} dB */\n")
+            cf.write(f"/* {spec.name}_{suffix}: taps={taps_count}, phase_len={phase_len}, input_len={input_len}, fft_n={profile['fft_n']}, stop_att={stop_att:.2f} dB */\n")
             cf.write(f"const float fft_fir_h_{spec.name}_{suffix}[] = {{\n")
             cf.write(format_c_array(h_fft))
             cf.write("\n};\n\n")
@@ -215,6 +231,7 @@ def main():
             cf.write(f"    .fs_out_hz = {int(spec.fs_out)},\n")
             cf.write(f"    .passband_hz = {int(spec.f_pass)},\n")
             cf.write(f"    .stopband_hz = {int(spec.f_stop)},\n")
+            cf.write(f"    .fft_len = {profile['fft_n']},\n")
             cf.write(f"    .up_ratio = {spec.up_ratio},\n")
             cf.write(f"    .phase_len = {phase_len},\n")
             cf.write(f"    .input_len = {input_len},\n")

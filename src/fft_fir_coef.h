@@ -7,7 +7,8 @@
 
 #include <stdint.h>
 
-#define FFT_FIR_N (512)
+#define FFT_FIR_MAX_N (512)
+#define FFT_FIR_MAX_COMPLEX_LEN (FFT_FIR_MAX_N * 2)
 #define FFT_FIR_MAX_PHASE_LEN (222)
 #define FFT_FIR_MAX_INPUT (469)
 #define FFT_FIR_MAX_OUTPUT (3752)
@@ -17,6 +18,7 @@ typedef struct
     uint32_t fs_out_hz;
     uint32_t passband_hz;
     uint32_t stopband_hz;
+    uint16_t fft_len;
     uint16_t up_ratio;
     uint16_t phase_len;
     uint16_t input_len;

@@ -11,7 +11,7 @@
 #include "arm_math.h"
 #include "arm_const_structs.h"
 
-#define FFT_FIR_COMPLEX_LEN (FFT_FIR_N * 2)
+#define FFT_FIR_COMPLEX_LEN (FFT_FIR_MAX_COMPLEX_LEN)
 
 static float fft_in[FFT_FIR_COMPLEX_LEN];
 static float fft_work[FFT_FIR_COMPLEX_LEN];
@@ -36,6 +36,19 @@ static void fft_fir_update_overlap(float *overlap, const float *input, uint32_t 
     }
 }
 
+static const arm_cfft_instance_f32 *fft_fir_get_cfft(uint16_t fft_len)
+{
+    switch (fft_len)
+    {
+    case 256:
+        return &arm_cfft_sR_f32_len256;
+    case 512:
+        return &arm_cfft_sR_f32_len512;
+    default:
+        return NULL;
+    }
+}
+
 static void __not_in_flash_func(fft_fir_process_channel)(
     const FFT_FIR_PROFILE *profile,
     const float *input,
@@ -46,6 +59,13 @@ static void __not_in_flash_func(fft_fir_process_channel)(
     uint32_t input_len = profile->input_len;
     uint32_t up_ratio = profile->up_ratio;
     const float *h_base = profile->h_fft;
+    uint32_t fft_len = profile->fft_len;
+    uint32_t complex_len = fft_len * 2;
+    const arm_cfft_instance_f32 *cfft = fft_fir_get_cfft(profile->fft_len);
+    if (cfft == NULL)
+        return;
+    if (pre >= fft_len || (pre + input_len) > fft_len)
+        return;
 
     for (uint32_t i = 0; i < pre; i++)
     {
@@ -60,14 +80,14 @@ static void __not_in_flash_func(fft_fir_process_channel)(
         fft_in[idx + 1] = 0.0f;
     }
 
-    arm_cfft_f32(&arm_cfft_sR_f32_len512, fft_in, 0, 1);
+    arm_cfft_f32(cfft, fft_in, 0, 1);
 
     for (uint32_t phase = 0; phase < up_ratio; phase++)
     {
-        const float *h = h_base + (phase * FFT_FIR_COMPLEX_LEN);
-        memcpy(fft_work, fft_in, sizeof(float) * FFT_FIR_COMPLEX_LEN);
+        const float *h = h_base + (phase * complex_len);
+        memcpy(fft_work, fft_in, sizeof(float) * complex_len);
 
-        for (uint32_t k = 0; k < FFT_FIR_N; k++)
+        for (uint32_t k = 0; k < fft_len; k++)
         {
             uint32_t idx = k * 2;
             float xr = fft_work[idx];
@@ -78,7 +98,7 @@ static void __not_in_flash_func(fft_fir_process_channel)(
             fft_work[idx + 1] = (xr * hi) + (xi * hr);
         }
 
-        arm_cfft_f32(&arm_cfft_sR_f32_len512, fft_work, 1, 1);
+        arm_cfft_f32(cfft, fft_work, 1, 1);
 
         for (uint32_t i = 0; i < input_len; i++)
         {
