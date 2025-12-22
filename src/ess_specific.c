@@ -17,10 +17,14 @@ extern I2C_RINGBUFFER i2c_ringbuffer0;
 void ess_dac_i2c_setup(void)
 {
 	uint8_t i2cbuf[2] = {0, 0};
+	uint16_t ratio_core0 = get_ratio_upsampling_core0(audio_state.freq);
+	uint16_t ratio_core1 = get_ratio_upsampling_core1();
+	uint32_t output_fs = audio_state.freq * ratio_core0 * ratio_core1;
+	bool external_upsampling = (ratio_core0 * ratio_core1) > 1;
 
 	if(KIND_ESS_DAC == ES9010K2M)
 	{
-		if(!CORE0_UPSAMPLING_192K)
+		if(external_upsampling)
 		{
 		// 内蔵アップサンプリングを使用しない
 		i2cbuf[0] = 0x15; // Resister 21
@@ -116,7 +120,7 @@ void ess_dac_i2c_setup(void)
 
 	else if(KIND_ESS_DAC == ES9039Q2M)
 	{
-		if((!BYPASS_CORE1_UPSAMPLING) && (!CORE0_UPSAMPLING_192K))
+		if(output_fs >= 700000)
 		{
 			// 768kHz入力を有効化し、DACを有効化する
 			i2cbuf[0] = 0x00; // Resister 0: SYSTEM_CONFIG
@@ -133,7 +137,7 @@ void ess_dac_i2c_setup(void)
 			sleep_ms(1);
 		}
 
-		if(!CORE0_UPSAMPLING_192K)
+		if(external_upsampling)
 		{
 			// 内蔵アップサンプリングを使用しない
 			i2cbuf[0] = 0x5A; // Resister 90: DAC_PATH_CONFIG

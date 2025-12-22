@@ -103,8 +103,8 @@ void __not_in_flash_func(pwm_wrap_handler)(void)
 }
 
 // アップサンプリングに使用するメモリを静的確保
-static float from_core0_Lch[SIZE_DMA_TX_BUF / RATIO_UPSAMPLING_CORE1 / 2];
-static float from_core0_Rch[SIZE_DMA_TX_BUF / RATIO_UPSAMPLING_CORE1 / 2];
+static float from_core0_Lch[SIZE_DMA_TX_BUF / CORE1_UP_RATIO_MAX / 2];
+static float from_core0_Rch[SIZE_DMA_TX_BUF / CORE1_UP_RATIO_MAX / 2];
 static float upsr_core1_Lch[SIZE_DMA_TX_BUF / 2];
 static float upsr_core1_Rch[SIZE_DMA_TX_BUF / 2];
 

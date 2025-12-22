@@ -12,7 +12,7 @@
 #include "common.h"
 #include "upsampling.h"
 
-#define SIZE_DMA_TX_BUF (49 * 2 * RATIO_UPSAMPLING_48K * RATIO_UPSAMPLING_CORE1 * TIMER_US_CORE1 / 1000 + 256)
+#define SIZE_DMA_TX_BUF (49 * 2 * CORE0_UP_RATIO_MAX * CORE1_UP_RATIO_MAX * TIMER_US_CORE1 / 1000 + 256)
 
 // DMA転送バッファはダブルバッファとして使うので2で十分
 #define SIZE_DMA_TX_BUF_STACK 2

@@ -6,6 +6,12 @@ file(GLOB DSP_SRC
         ${CMAKE_CURRENT_SOURCE_DIR}/../CMSIS/DSP/Source/FilteringFunctions/arm_fir_interpolate_init_f32.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../CMSIS/DSP/Source/FilteringFunctions/arm_biquad_cascade_df1_f32.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../CMSIS/DSP/Source/FilteringFunctions/arm_biquad_cascade_df1_init_f32.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/../CMSIS/DSP/Source/TransformFunctions/arm_cfft_f32.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/../CMSIS/DSP/Source/TransformFunctions/arm_cfft_radix8_f32.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/../CMSIS/DSP/Source/TransformFunctions/arm_bitreversal.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/../CMSIS/DSP/Source/TransformFunctions/arm_bitreversal2.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/../CMSIS/DSP/Source/CommonTables/arm_common_tables.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/../CMSIS/DSP/Source/CommonTables/arm_const_structs.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../CMSIS/DSP/Source/SupportFunctions/arm_q31_to_float.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../CMSIS/DSP/Source/BasicMathFunctions/arm_scale_f32.c
         )
@@ -19,7 +25,9 @@ add_executable(Pico2UltraHiResUSBDDC
         i2s_pio_interface.c
         transmit_to_dac.c
         upsampling_coef.c
+        fft_fir_coef.c
         upsampling.c
+        fft_fir_core0.c
         ringbuffer.c
         debug_with_gpio.c
         ess_specific.c

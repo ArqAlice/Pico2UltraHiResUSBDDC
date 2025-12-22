@@ -53,10 +53,13 @@
 #define I2S_SIDESET_BASE (27)
 
 // Upsampler control
-#define BYPASS_CORE1_UPSAMPLING (true)
-#define CORE0_UPSAMPLING_192K (true)
-#define ENABLE_1536KHZ_OUTPUT (false)
-#define DEFAULT_GAIN_RATIO (0.72) // Adjust this according to your filter to avoid clipping.
+// Core0 ratio is for 48k family; 96k uses /2, 192k uses /4 (min 1).
+#define CORE0_UP_RATIO_HP (8)
+#define CORE0_UP_RATIO_LP (4)
+// Core1 ratio is applied directly (1/2/4 are supported).
+#define CORE1_UP_RATIO_HP (1)
+#define CORE1_UP_RATIO_LP (1)
+#define DEFAULT_GAIN_RATIO (0.75) // Adjust this according to your filter to avoid clipping.
 
 // ESS DAC Specific
 #define USE_ESS_DAC (true)
@@ -95,12 +98,8 @@
 #define AUDIO_INITIAL_FREQ (44100)
 
 // アップサンプリング倍率(Core0)
-#define RATIO_UPSAMPLING_48K (8)
-#define RATIO_UPSAMPLING_96K (RATIO_UPSAMPLING_48K / 2)
-#define RATIO_UPSAMPLING_192K (RATIO_UPSAMPLING_48K / 4)
-
-// アップサンプリング倍率(Core1)
-#define RATIO_UPSAMPLING_CORE1 (4)
+#define CORE0_UP_RATIO_MAX ((CORE0_UP_RATIO_HP) > (CORE0_UP_RATIO_LP) ? (CORE0_UP_RATIO_HP) : (CORE0_UP_RATIO_LP))
+#define CORE1_UP_RATIO_MAX ((CORE1_UP_RATIO_HP) > (CORE1_UP_RATIO_LP) ? (CORE1_UP_RATIO_HP) : (CORE1_UP_RATIO_LP))
 
 // DCDC Control
 #define DCDC_MODE_PIN (23)
@@ -114,7 +113,7 @@
 #define TIMER_US_CORE1 (250)
 
 // エンドポイントバッファサイズ((96+1)kHz*1ms=97以上あればよい)
-#define SIZE_EP_BUFFER (256)
+#define SIZE_EP_BUFFER (512)
 
 // アップサンプリングバッファサイズ(10ms分程度ほしい (96+1)kHz*10ms*4upsampling=3880 FB水位を50%確保したいのでこれの2倍用意する)
 #define SIZE_UPSAMPLE_CORE0 (8192)
@@ -222,45 +221,36 @@ inline uint16_t ratio_to_bitshift(uint16_t ratio)
 // アップサンプリング倍率取得関数(Core0)
 inline uint16_t get_ratio_upsampling_core0(uint32_t freq)
 {
+	uint16_t base = is_high_power_mode ? CORE0_UP_RATIO_HP : CORE0_UP_RATIO_LP;
 	uint16_t ratio;
 	switch (freq)
 	{
 	case 192000:
 	case 176400:
-		ratio = RATIO_UPSAMPLING_192K;
+		ratio = base >> 2;
 		break;
 	case 96000:
 	case 88200:
-		ratio = RATIO_UPSAMPLING_96K;
+		ratio = base >> 1;
 		break;
 	case 48000:
 	case 44100:
 	default:
-		ratio = RATIO_UPSAMPLING_48K;
+		ratio = base;
 		break;
 	}
 
-	if (!CORE0_UPSAMPLING_192K)
-		return ratio;
-	else
-		return ratio >> 1;
+	if (ratio == 0)
+		return 1;
+	return ratio;
 }
 
-// アップサンプリング倍率取得関数(Core1)
 inline uint16_t get_ratio_upsampling_core1(void)
 {
-	if (ENABLE_1536KHZ_OUTPUT && is_high_power_mode && (!BYPASS_CORE1_UPSAMPLING) && (!CORE0_UPSAMPLING_192K))
-	{
-		return RATIO_UPSAMPLING_CORE1;
-	}
-	else if ((!BYPASS_CORE1_UPSAMPLING) && (!CORE0_UPSAMPLING_192K))
-	{
-		return RATIO_UPSAMPLING_CORE1 >> 1;
-	}
-	else // bypass Core1 upsampling
-	{
+	uint16_t ratio = is_high_power_mode ? CORE1_UP_RATIO_HP : CORE1_UP_RATIO_LP;
+	if (ratio == 0)
 		return 1;
-	}
+	return ratio;
 }
 
 #endif
