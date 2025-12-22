@@ -110,12 +110,14 @@ DAC ENABLE(PCM5102では不要)
 
 デフォルトでは 384kHz/352.8kHz になっています。
 
-| 出力サンプルレート | ALWAYS_HIGH_POWER | ALWAYS_LOW_POWER | BYPASS_CORE1_UPSAMPLING | CORE0_UPSAMPLING_192K |
-| ------------------ | ----------------- | ---------------- | ----------------------- | --------------------- |
-| 1536kHz/1411.2kHz  | true              | false            | false                   | false                 |
-| 768kHz/705.6kHz    | false             | true             | false                   | false                 |
-| 384kHz/352.8kHz    | *                 | *                | true                    | false                 |
-| 192kHz/176.4kHz    | *                 | *                | *                       | true                  |
+| 出力サンプルレート              | ALWAYS_HIGH_POWER | ALWAYS_LOW_POWER | BYPASS_CORE1_UPSAMPLING | CORE0_UPSAMPLING_192K | ENABLE_1536KHZ_OUTPUT |
+| ------------------------------- | ----------------- | ---------------- | ----------------------- | --------------------- | --------------------- |
+| 1536kHz/1411.2kHz(FIR384k only) | true              | false            | false                   | false                 | true                  |
+| 768kHz/705.6kHz(FIR384k)        | true              | false            | false                   | false                 | false                 |
+| 768kHz/705.6kHz(IIR384k)        | false             | true             | false                   | false                 | false                 |
+| 384kHz/352.8kHz(FIR384k)        | true              | false            | true                    | false                 | false                 |
+| 384kHz/352.8kHz(IIR384k)        | false             | true             | true                    | false                 | false                 |
+| 192kHz/176.4kHz                 | *                 | *                | *                       | true                  | false                 |
 
 ---
 
