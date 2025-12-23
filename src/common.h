@@ -123,12 +123,6 @@
 
 // FB水位(50%が望ましい)
 #define SIZE_BUFFER_FB_THRESHOLD (SIZE_UPSAMPLE_CORE0 / 2)
-// USB入力リングバッファのフィードバック目標水位
-#define FB_TARGET_EP_SAMPLES (SIZE_EP_BUFFER / 2)
-// フィードバック誤差の平滑化(1/2^n)
-#define FB_SMOOTH_SHIFT (3)
-// フィードバック調整ゲイン(1/2^n)
-#define FB_GAIN_SHIFT (2)
 
 // Feedback(±1サンプルになる値を返す 基準は1000)
 #define FB_ADJ_LIMIT (1000)

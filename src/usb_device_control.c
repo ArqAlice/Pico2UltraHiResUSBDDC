@@ -409,12 +409,10 @@ static void _as_sync_packet(struct usb_endpoint *ep)
 	assert(buffer->data_max >= 3);
 	buffer->data_len = 3;
 
-	// Feedback: USB入力リングの水位を使い、平滑化して調整量を算出
-	static int32_t err_lp = 0;
-	int32_t err = (int32_t)FB_TARGET_EP_SAMPLES - (int32_t)get_size_using(&buffer_ep_Lch);
-	err_lp += (err - err_lp) >> FB_SMOOTH_SHIFT;
-	int32_t adjust_value = err_lp >> FB_GAIN_SHIFT;
-	adjust_value = saturation_i32(adjust_value, FB_ADJ_LIMIT, -FB_ADJ_LIMIT);
+	// Feedbackパラメータ計算 アップサンプリングバッファの使用率でFBをかけている
+	float ratio = get_ratio_upsampling_core0(audio_state.freq);
+	float deviation = (SIZE_BUFFER_FB_THRESHOLD - get_size_using(&buffer_upsr_data_Lch_0)) / ratio;
+	int32_t adjust_value = saturation_i32((int32_t)deviation, FB_ADJ_LIMIT, -FB_ADJ_LIMIT);
 
 	uint32_t feedback_fs = audio_state.freq + adjust_value;
 	uint32_t feedback = (feedback_fs << 14) / 1000;
