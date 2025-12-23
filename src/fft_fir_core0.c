@@ -12,6 +12,8 @@
 
 #define FFT_FIR_PACKED_LEN (FFT_FIR_MAX_PACKED_LEN)
 #define FFT_FIR_TIME_LEN (FFT_FIR_MAX_FFT_LEN)
+#define FFT_FIR_STAGE_MAX (2u)
+#define FFT_FIR_RFFT_CACHE_SLOTS (4u)
 
 static float fft_time[FFT_FIR_TIME_LEN];
 static float fft_freq[FFT_FIR_PACKED_LEN];
@@ -29,20 +31,36 @@ typedef struct
     float tail_in[FFT_FIR_TAIL_BLOCK_LEN];
 } FFT_FIR_STATE;
 
-static FFT_FIR_STATE state_L;
-static FFT_FIR_STATE state_R;
+static FFT_FIR_STATE state_L[FFT_FIR_STAGE_MAX];
+static FFT_FIR_STATE state_R[FFT_FIR_STAGE_MAX];
 
-static arm_rfft_fast_instance_f32 head_rfft;
-static arm_rfft_fast_instance_f32 tail_rfft;
-static bool rfft_ready = false;
-
-static void fft_fir_init_rfft(void)
+typedef struct
 {
-    if (rfft_ready)
-        return;
-    arm_rfft_fast_init_f32(&head_rfft, FFT_FIR_HEAD_FFT_LEN);
-    arm_rfft_fast_init_f32(&tail_rfft, FFT_FIR_TAIL_FFT_LEN);
-    rfft_ready = true;
+    uint16_t fft_len;
+    bool ready;
+    arm_rfft_fast_instance_f32 inst;
+} FFT_FIR_RFFT_CACHE;
+
+static FFT_FIR_RFFT_CACHE rfft_cache[FFT_FIR_RFFT_CACHE_SLOTS];
+
+static arm_rfft_fast_instance_f32 *fft_fir_get_rfft(uint16_t fft_len)
+{
+    for (uint32_t i = 0; i < FFT_FIR_RFFT_CACHE_SLOTS; i++)
+    {
+        if (rfft_cache[i].ready && rfft_cache[i].fft_len == fft_len)
+            return &rfft_cache[i].inst;
+    }
+    for (uint32_t i = 0; i < FFT_FIR_RFFT_CACHE_SLOTS; i++)
+    {
+        if (!rfft_cache[i].ready)
+        {
+            arm_rfft_fast_init_f32(&rfft_cache[i].inst, fft_len);
+            rfft_cache[i].fft_len = fft_len;
+            rfft_cache[i].ready = true;
+            return &rfft_cache[i].inst;
+        }
+    }
+    return NULL;
 }
 
 static void __not_in_flash_func(rfft_packed_mul_store)(
@@ -92,7 +110,12 @@ static void __not_in_flash_func(fft_fir_process_channel)(
     const float *h_head = profile->h_head_fft;
     const float *h_tail = profile->h_tail_fft;
 
-    fft_fir_init_rfft();
+    arm_rfft_fast_instance_f32 *head_rfft = fft_fir_get_rfft(head_fft_len);
+    arm_rfft_fast_instance_f32 *tail_rfft = NULL;
+    if (tail_parts > 0)
+        tail_rfft = fft_fir_get_rfft(tail_fft_len);
+    if (head_rfft == NULL || (tail_parts > 0 && tail_rfft == NULL))
+        return;
 
     if (input_len == 0 || input_len != head_block_len)
         return;
@@ -115,7 +138,7 @@ static void __not_in_flash_func(fft_fir_process_channel)(
     memcpy(fft_time, input, sizeof(float) * input_len);
     memset(fft_time + input_len, 0, sizeof(float) * (head_fft_len - input_len));
 
-    arm_rfft_fast_f32(&head_rfft, fft_time, fft_freq, 0);
+    arm_rfft_fast_f32(head_rfft, fft_time, fft_freq, 0);
     memcpy(state->head_x_hist[state->head_hist_index], fft_freq, sizeof(float) * head_fft_len);
 
     for (uint32_t phase = 0; phase < up_ratio; phase++)
@@ -151,7 +174,7 @@ static void __not_in_flash_func(fft_fir_process_channel)(
             }
         }
 
-        arm_rfft_fast_f32(&head_rfft, fft_freq, fft_time, 1);
+        arm_rfft_fast_f32(head_rfft, fft_freq, fft_time, 1);
 
         float *overlap = state->head_overlap[phase];
         float *out = output + phase;
@@ -175,7 +198,7 @@ static void __not_in_flash_func(fft_fir_process_channel)(
             memcpy(fft_time, state->tail_in, sizeof(float) * tail_block_len);
             memset(fft_time + tail_block_len, 0, sizeof(float) * (tail_fft_len - tail_block_len));
 
-            arm_rfft_fast_f32(&tail_rfft, fft_time, fft_freq, 0);
+            arm_rfft_fast_f32(tail_rfft, fft_time, fft_freq, 0);
             memcpy(state->tail_x_hist[state->tail_hist_index], fft_freq, sizeof(float) * tail_fft_len);
 
             for (uint32_t phase = 0; phase < up_ratio; phase++)
@@ -212,7 +235,7 @@ static void __not_in_flash_func(fft_fir_process_channel)(
                     }
                 }
 
-                arm_rfft_fast_f32(&tail_rfft, fft_freq, fft_time, 1);
+                arm_rfft_fast_f32(tail_rfft, fft_freq, fft_time, 1);
 
                 float *overlap = state->tail_overlap[phase];
                 float *tail_out = state->tail_out[phase];
@@ -250,14 +273,13 @@ static void __not_in_flash_func(fft_fir_process_channel)(
 
 void fft_fir_core0_init(void)
 {
-    fft_fir_init_rfft();
     fft_fir_core0_reset();
 }
 
 void fft_fir_core0_reset(void)
 {
-    memset(&state_L, 0, sizeof(state_L));
-    memset(&state_R, 0, sizeof(state_R));
+    memset(state_L, 0, sizeof(state_L));
+    memset(state_R, 0, sizeof(state_R));
 }
 
 const FFT_FIR_PROFILE *fft_fir_core0_select_profile(uint32_t freq, uint16_t ratio, bool is_high_power)
@@ -266,35 +288,45 @@ const FFT_FIR_PROFILE *fft_fir_core0_select_profile(uint32_t freq, uint16_t rati
     {
     case 44100:
         if (ratio == 8)
-            return is_high_power ? &fft_fir_profile_352800_22050_u8_hp : &fft_fir_profile_352800_22050_u8_lp;
+            return is_high_power ? &fft_fir_profile_in44100_out352800_pb20000_sb28000_u8_hp
+                                 : &fft_fir_profile_in44100_out352800_pb20000_sb28000_u8_lp;
         if (ratio == 4)
-            return is_high_power ? &fft_fir_profile_176400_22050_u4_hp : &fft_fir_profile_176400_22050_u4_lp;
+            return is_high_power ? &fft_fir_profile_in44100_out176400_pb20000_sb28000_u4_hp
+                                 : &fft_fir_profile_in44100_out176400_pb20000_sb28000_u4_lp;
         break;
     case 88200:
         if (ratio == 4)
-            return is_high_power ? &fft_fir_profile_352800_24000_u4_hp : &fft_fir_profile_352800_24000_u4_lp;
+            return is_high_power ? &fft_fir_profile_in88200_out352800_pb20000_sb28000_u4_tag24000_hp
+                                 : &fft_fir_profile_in88200_out352800_pb20000_sb28000_u4_tag24000_lp;
         if (ratio == 2)
-            return is_high_power ? &fft_fir_profile_176400_24000_u2_hp : &fft_fir_profile_176400_24000_u2_lp;
+            return is_high_power ? &fft_fir_profile_in88200_out176400_pb20000_sb44100_u2_hp
+                                 : &fft_fir_profile_in88200_out176400_pb20000_sb44100_u2_lp;
         break;
     case 176400:
         if (ratio == 2)
-            return is_high_power ? &fft_fir_profile_352800_24000_u2_hp : &fft_fir_profile_352800_24000_u2_lp;
+            return is_high_power ? &fft_fir_profile_in176400_out352800_pb20000_sb88200_u2_hp
+                                 : &fft_fir_profile_in176400_out352800_pb20000_sb88200_u2_lp;
         break;
     case 48000:
         if (ratio == 8)
-            return is_high_power ? &fft_fir_profile_384000_24000_u8_hp : &fft_fir_profile_384000_24000_u8_lp;
+            return is_high_power ? &fft_fir_profile_in48000_out384000_pb20000_sb28000_u8_hp
+                                 : &fft_fir_profile_in48000_out384000_pb20000_sb28000_u8_lp;
         if (ratio == 4)
-            return is_high_power ? &fft_fir_profile_192000_24000_u4_hp : &fft_fir_profile_192000_24000_u4_lp;
+            return is_high_power ? &fft_fir_profile_in48000_out192000_pb20000_sb28000_u4_hp
+                                 : &fft_fir_profile_in48000_out192000_pb20000_sb28000_u4_lp;
         break;
     case 96000:
         if (ratio == 4)
-            return is_high_power ? &fft_fir_profile_384000_24000_u4_hp : &fft_fir_profile_384000_24000_u4_lp;
+            return is_high_power ? &fft_fir_profile_in96000_out384000_pb20000_sb28000_u4_hp
+                                 : &fft_fir_profile_in96000_out384000_pb20000_sb28000_u4_lp;
         if (ratio == 2)
-            return is_high_power ? &fft_fir_profile_192000_24000_u2_hp : &fft_fir_profile_192000_24000_u2_lp;
+            return is_high_power ? &fft_fir_profile_in96000_out192000_pb20000_sb48000_u2_hp
+                                 : &fft_fir_profile_in96000_out192000_pb20000_sb48000_u2_lp;
         break;
     case 192000:
         if (ratio == 2)
-            return is_high_power ? &fft_fir_profile_384000_24000_u2_hp : &fft_fir_profile_384000_24000_u2_lp;
+            return is_high_power ? &fft_fir_profile_in192000_out384000_pb20000_sb96000_u2_hp
+                                 : &fft_fir_profile_in192000_out384000_pb20000_sb96000_u2_lp;
         break;
     default:
         break;
@@ -309,11 +341,23 @@ uint32_t __not_in_flash_func(fft_fir_core0_process_block)(
     float *out_L,
     float *out_R)
 {
+    return fft_fir_core0_process_block_stage(profile, in_L, in_R, out_L, out_R, 0);
+}
+
+uint32_t __not_in_flash_func(fft_fir_core0_process_block_stage)(
+    const FFT_FIR_PROFILE *profile,
+    const float *in_L,
+    const float *in_R,
+    float *out_L,
+    float *out_R,
+    uint8_t stage)
+{
     if (profile == NULL)
         return 0;
 
-    fft_fir_process_channel(profile, in_L, out_L, &state_L);
-    fft_fir_process_channel(profile, in_R, out_R, &state_R);
+    uint8_t index = stage < FFT_FIR_STAGE_MAX ? stage : 0;
+    fft_fir_process_channel(profile, in_L, out_L, &state_L[index]);
+    fft_fir_process_channel(profile, in_R, out_R, &state_R[index]);
 
     return profile->input_len * profile->up_ratio;
 }

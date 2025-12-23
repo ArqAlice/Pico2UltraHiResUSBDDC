@@ -757,8 +757,24 @@ static void _as_audio_packet(struct usb_endpoint *ep)
 	uint16_t ratio = get_ratio_upsampling_core0(audio_state.freq);
 	if (audio_state.freq != last_freq || ratio != last_ratio || power_mode != last_power)
 	{
-		const FFT_FIR_PROFILE *profile = fft_fir_core0_select_profile(audio_state.freq, ratio, power_mode);
-		fft_gain_ratio = profile ? profile->gain_ratio : 1.0f;
+		if (ratio == 8)
+		{
+			const FFT_FIR_PROFILE *profile_stage1 = fft_fir_core0_select_profile(audio_state.freq, 4, power_mode);
+			if (profile_stage1)
+			{
+				fft_gain_ratio = profile_stage1->gain_ratio;
+			}
+			else
+			{
+				const FFT_FIR_PROFILE *profile = fft_fir_core0_select_profile(audio_state.freq, ratio, power_mode);
+				fft_gain_ratio = profile ? profile->gain_ratio : 1.0f;
+			}
+		}
+		else
+		{
+			const FFT_FIR_PROFILE *profile = fft_fir_core0_select_profile(audio_state.freq, ratio, power_mode);
+			fft_gain_ratio = profile ? profile->gain_ratio : 1.0f;
+		}
 		last_freq = audio_state.freq;
 		last_ratio = ratio;
 		last_power = power_mode;

@@ -30,6 +30,37 @@ static float biquad4R_state[SIZE_BQ_FILTER_4 * 4];
 static float biquad3_coeffs[SIZE_BQ_FILTER_3 * 5];
 static float biquad4_coeffs[SIZE_BQ_FILTER_4 * 5];
 
+// 2x Half-band FIR (time domain)
+static float hb_state_L_44[FFT_FIR_HALF_BAND_EVEN_TAPS_44];
+static float hb_state_R_44[FFT_FIR_HALF_BAND_EVEN_TAPS_44];
+static float hb_state_L_48[FFT_FIR_HALF_BAND_EVEN_TAPS_48];
+static float hb_state_R_48[FFT_FIR_HALF_BAND_EVEN_TAPS_48];
+
+static void __not_in_flash_func(halfband_interp2)(
+    const float *input,
+    float *output,
+    uint32_t length,
+    const float *even_taps,
+    uint32_t even_taps_len,
+    float center,
+    uint32_t center_index,
+    float *state)
+{
+    for (uint32_t n = 0; n < length; n++)
+    {
+        for (uint32_t i = even_taps_len - 1; i > 0; i--)
+            state[i] = state[i - 1];
+        state[0] = input[n];
+
+        float acc = 0.0f;
+        for (uint32_t i = 0; i < even_taps_len; i++)
+            acc += even_taps[i] * state[i];
+
+        output[(n * 2u)] = acc;
+        output[(n * 2u) + 1u] = center * state[center_index];
+    }
+}
+
 // ARM FIR構造体
 
 // ARM FIR 状態保存バッファ
@@ -98,6 +129,16 @@ extern void clear_bq_filter_delay(void)
         biquad4L_state[i] = 0;
         biquad4R_state[i] = 0;
     }
+    for (uint16_t i = 0; i < FFT_FIR_HALF_BAND_EVEN_TAPS_44; i++)
+    {
+        hb_state_L_44[i] = 0;
+        hb_state_R_44[i] = 0;
+    }
+    for (uint16_t i = 0; i < FFT_FIR_HALF_BAND_EVEN_TAPS_48; i++)
+    {
+        hb_state_L_48[i] = 0;
+        hb_state_R_48[i] = 0;
+    }
     fft_fir_core0_reset();
 }
 
@@ -149,6 +190,8 @@ static uint32_t __not_in_flash_func(fast_BQ_filter_4x_0)(uint32_t length, float 
 // アップサンプリングに使用するメモリを静的確保
 static int32_t buffer_copy_from_ep_left_ch[FFT_FIR_MAX_INPUT];
 static int32_t buffer_copy_from_ep_right_ch[FFT_FIR_MAX_INPUT];
+static float fft_stage1_L[FFT_FIR_MAX_OUTPUT];
+static float fft_stage1_R[FFT_FIR_MAX_OUTPUT];
 static float fft_output_L[FFT_FIR_MAX_OUTPUT];
 static float fft_output_R[FFT_FIR_MAX_OUTPUT];
 
@@ -157,6 +200,7 @@ void __not_in_flash_func(upsampling_process_core0)(void)
     int32_t size_buf = get_size_using(&buffer_ep_Lch);
     uint16_t ratio = get_ratio_upsampling_core0(audio_state.freq);
     uint32_t save;
+    bool is_44k1_family = (audio_state.freq == 44100 || audio_state.freq == 88200 || audio_state.freq == 176400);
 
     if (size_buf <= 0)
         return;
@@ -179,6 +223,60 @@ void __not_in_flash_func(upsampling_process_core0)(void)
         return;
     }
 
+    uint16_t stage1_ratio = 0;
+    if (ratio == 8)
+        stage1_ratio = 4;
+
+    if (stage1_ratio > 0)
+    {
+        const FFT_FIR_PROFILE *profile_stage1 = fft_fir_core0_select_profile(audio_state.freq, stage1_ratio, is_high_power_mode);
+        if (profile_stage1 == NULL)
+            goto single_stage;
+
+        uint32_t input_len = profile_stage1->input_len;
+        uint32_t stage1_out_len = input_len * stage1_ratio;
+        uint32_t output_len = stage1_out_len * 2u;
+        if (output_len != (input_len * ratio))
+            goto single_stage;
+
+        if (size_buf < (int32_t)input_len)
+            return;
+        if (get_size_remain(&buffer_upsr_data_Lch_0) < (int32_t)output_len)
+            return;
+
+        save = save_and_disable_interrupts();
+        ringbuf_read_array_no_spinlock(buffer_copy_from_ep_left_ch, input_len, &buffer_ep_Lch);
+        ringbuf_read_array_no_spinlock(buffer_copy_from_ep_right_ch, input_len, &buffer_ep_Rch);
+        restore_interrupts(save);
+
+        uint32_t produced_stage1 = fft_fir_core0_process_block_stage(
+            profile_stage1,
+            (float *)buffer_copy_from_ep_left_ch,
+            (float *)buffer_copy_from_ep_right_ch,
+            fft_stage1_L,
+            fft_stage1_R,
+            0);
+        if (produced_stage1 == 0 || produced_stage1 != stage1_out_len)
+            return;
+
+        const float *hb_even = is_44k1_family ? fft_fir_halfband_even_44 : fft_fir_halfband_even_48;
+        float hb_center = is_44k1_family ? fft_fir_halfband_center_44 : fft_fir_halfband_center_48;
+        uint32_t hb_len = is_44k1_family ? FFT_FIR_HALF_BAND_EVEN_TAPS_44 : FFT_FIR_HALF_BAND_EVEN_TAPS_48;
+        uint32_t hb_center_index = is_44k1_family ? FFT_FIR_HALF_BAND_CENTER_INDEX_44 : FFT_FIR_HALF_BAND_CENTER_INDEX_48;
+        float *hb_state_L = is_44k1_family ? hb_state_L_44 : hb_state_L_48;
+        float *hb_state_R = is_44k1_family ? hb_state_R_44 : hb_state_R_48;
+
+        halfband_interp2(fft_stage1_L, fft_output_L, produced_stage1, hb_even, hb_len, hb_center, hb_center_index, hb_state_L);
+        halfband_interp2(fft_stage1_R, fft_output_R, produced_stage1, hb_even, hb_len, hb_center, hb_center_index, hb_state_R);
+
+        save = save_and_disable_interrupts();
+        ringbuf_write_array_spinlock((int32_t *)fft_output_L, output_len, &buffer_upsr_data_Lch_0);
+        ringbuf_write_array_spinlock((int32_t *)fft_output_R, output_len, &buffer_upsr_data_Rch_0);
+        restore_interrupts(save);
+        return;
+    }
+
+single_stage:
     const FFT_FIR_PROFILE *profile = fft_fir_core0_select_profile(audio_state.freq, ratio, is_high_power_mode);
     if (profile == NULL)
         return;

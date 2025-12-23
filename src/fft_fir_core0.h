@@ -21,5 +21,12 @@ extern uint32_t __not_in_flash_func(fft_fir_core0_process_block)(
     const float *in_R,
     float *out_L,
     float *out_R);
+extern uint32_t __not_in_flash_func(fft_fir_core0_process_block_stage)(
+    const FFT_FIR_PROFILE *profile,
+    const float *in_L,
+    const float *in_R,
+    float *out_L,
+    float *out_R,
+    uint8_t stage);
 
 #endif /* _FFT_FIR_CORE0_H_ */
