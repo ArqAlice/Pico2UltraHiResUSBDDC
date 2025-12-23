@@ -7,49 +7,84 @@
 
 #include <stdint.h>
 
-#define FFT_FIR_MAX_N (512)
-#define FFT_FIR_MAX_COMPLEX_LEN (FFT_FIR_MAX_N * 2)
+#define FFT_FIR_HEAD_BLOCK_LEN (128)
+#define FFT_FIR_HEAD_FFT_LEN (256)
+#define FFT_FIR_TAIL_BLOCK_LEN (256)
+#define FFT_FIR_TAIL_FFT_LEN (512)
+#define FFT_FIR_MAX_FFT_LEN (FFT_FIR_TAIL_FFT_LEN)
+#define FFT_FIR_MAX_PACKED_LEN (FFT_FIR_MAX_FFT_LEN)
+#define FFT_FIR_MAX_HEAD_PARTS (1)
+#define FFT_FIR_MAX_TAIL_PARTS (1)
+#define FFT_FIR_MAX_UP_RATIO (8)
 #define FFT_FIR_MAX_PHASE_LEN (222)
-#define FFT_FIR_MAX_INPUT (469)
-#define FFT_FIR_MAX_OUTPUT (3752)
+#define FFT_FIR_MAX_INPUT (FFT_FIR_HEAD_BLOCK_LEN)
+#define FFT_FIR_MAX_OUTPUT (FFT_FIR_HEAD_BLOCK_LEN * FFT_FIR_MAX_UP_RATIO)
 
 typedef struct
 {
     uint32_t fs_out_hz;
     uint32_t passband_hz;
     uint32_t stopband_hz;
-    uint16_t fft_len;
+    uint16_t head_fft_len;
+    uint16_t head_block_len;
+    uint16_t head_parts;
+    uint16_t tail_fft_len;
+    uint16_t tail_block_len;
+    uint16_t tail_parts;
     uint16_t up_ratio;
     uint16_t phase_len;
     uint16_t input_len;
     uint16_t taps;
     float dc_gain;
     float gain_ratio;
-    const float *h_fft;
+    const float *h_head_fft;
+    const float *h_tail_fft;
 } FFT_FIR_PROFILE;
 
-extern const float fft_fir_h_176400_22050_u4_hp[];
-extern const float fft_fir_h_176400_22050_u4_lp[];
-extern const float fft_fir_h_176400_24000_u2_hp[];
-extern const float fft_fir_h_176400_24000_u2_lp[];
-extern const float fft_fir_h_192000_24000_u4_hp[];
-extern const float fft_fir_h_192000_24000_u4_lp[];
-extern const float fft_fir_h_192000_24000_u2_hp[];
-extern const float fft_fir_h_192000_24000_u2_lp[];
-extern const float fft_fir_h_352800_22050_u8_hp[];
-extern const float fft_fir_h_352800_22050_u8_lp[];
-extern const float fft_fir_h_352800_22050_u4_hp[];
-extern const float fft_fir_h_352800_22050_u4_lp[];
-extern const float fft_fir_h_352800_24000_u4_hp[];
-extern const float fft_fir_h_352800_24000_u4_lp[];
-extern const float fft_fir_h_352800_24000_u2_hp[];
-extern const float fft_fir_h_352800_24000_u2_lp[];
-extern const float fft_fir_h_384000_24000_u8_hp[];
-extern const float fft_fir_h_384000_24000_u8_lp[];
-extern const float fft_fir_h_384000_24000_u4_hp[];
-extern const float fft_fir_h_384000_24000_u4_lp[];
-extern const float fft_fir_h_384000_24000_u2_hp[];
-extern const float fft_fir_h_384000_24000_u2_lp[];
+extern const float fft_fir_head_176400_22050_u4_hp[];
+extern const float fft_fir_tail_176400_22050_u4_hp[];
+extern const float fft_fir_head_176400_22050_u4_lp[];
+extern const float fft_fir_tail_176400_22050_u4_lp[];
+extern const float fft_fir_head_176400_24000_u2_hp[];
+extern const float fft_fir_tail_176400_24000_u2_hp[];
+extern const float fft_fir_head_176400_24000_u2_lp[];
+extern const float fft_fir_tail_176400_24000_u2_lp[];
+extern const float fft_fir_head_192000_24000_u4_hp[];
+extern const float fft_fir_tail_192000_24000_u4_hp[];
+extern const float fft_fir_head_192000_24000_u4_lp[];
+extern const float fft_fir_tail_192000_24000_u4_lp[];
+extern const float fft_fir_head_192000_24000_u2_hp[];
+extern const float fft_fir_tail_192000_24000_u2_hp[];
+extern const float fft_fir_head_192000_24000_u2_lp[];
+extern const float fft_fir_tail_192000_24000_u2_lp[];
+extern const float fft_fir_head_352800_22050_u8_hp[];
+extern const float fft_fir_tail_352800_22050_u8_hp[];
+extern const float fft_fir_head_352800_22050_u8_lp[];
+extern const float fft_fir_tail_352800_22050_u8_lp[];
+extern const float fft_fir_head_352800_22050_u4_hp[];
+extern const float fft_fir_tail_352800_22050_u4_hp[];
+extern const float fft_fir_head_352800_22050_u4_lp[];
+extern const float fft_fir_tail_352800_22050_u4_lp[];
+extern const float fft_fir_head_352800_24000_u4_hp[];
+extern const float fft_fir_tail_352800_24000_u4_hp[];
+extern const float fft_fir_head_352800_24000_u4_lp[];
+extern const float fft_fir_tail_352800_24000_u4_lp[];
+extern const float fft_fir_head_352800_24000_u2_hp[];
+extern const float fft_fir_tail_352800_24000_u2_hp[];
+extern const float fft_fir_head_352800_24000_u2_lp[];
+extern const float fft_fir_tail_352800_24000_u2_lp[];
+extern const float fft_fir_head_384000_24000_u8_hp[];
+extern const float fft_fir_tail_384000_24000_u8_hp[];
+extern const float fft_fir_head_384000_24000_u8_lp[];
+extern const float fft_fir_tail_384000_24000_u8_lp[];
+extern const float fft_fir_head_384000_24000_u4_hp[];
+extern const float fft_fir_tail_384000_24000_u4_hp[];
+extern const float fft_fir_head_384000_24000_u4_lp[];
+extern const float fft_fir_tail_384000_24000_u4_lp[];
+extern const float fft_fir_head_384000_24000_u2_hp[];
+extern const float fft_fir_tail_384000_24000_u2_hp[];
+extern const float fft_fir_head_384000_24000_u2_lp[];
+extern const float fft_fir_tail_384000_24000_u2_lp[];
 
 extern const FFT_FIR_PROFILE fft_fir_profile_176400_22050_u4_hp;
 extern const FFT_FIR_PROFILE fft_fir_profile_176400_22050_u4_lp;

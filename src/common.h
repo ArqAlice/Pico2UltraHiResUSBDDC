@@ -39,8 +39,8 @@
 // Power Mode Switch Pin
 // The Hi-Power Mode, Core0 uses 384KHz FIR Filter
 #define POWER_MODE_SWITCH_PIN (0)
-#define ALWAYS_HIGH_POWER (false)
-#define ALWAYS_LOW_POWER (true)
+#define ALWAYS_HIGH_POWER (true)
+#define ALWAYS_LOW_POWER (false)
 
 // I2C
 #define I2C_PORT (i2c1)
@@ -54,7 +54,7 @@
 
 // Upsampler control
 // Core0 ratio is for 48k family; 96k uses /2, 192k uses /4 (min 1).
-#define CORE0_UP_RATIO_HP (8)
+#define CORE0_UP_RATIO_HP (4)
 #define CORE0_UP_RATIO_LP (4)
 // Core1 ratio is applied directly (1/2/4 are supported).
 #define CORE1_UP_RATIO_HP (1)
@@ -87,12 +87,15 @@
 #define SYS_CLOCK_KHZ_48K (307200)
 #define SYS_CLOCK_KHZ_LP_44K (208000)
 #define SYS_CLOCK_KHZ_LP_48K (208000)
-// #define SYS_CLOCK_KHZ 208800 //  208M8/48k/64 = 67.968->68, 208M8/44k1/64 = 73.979->74
-// #define SYS_CLOCK_KHZ 150000
+// 208M8/48k/64 = 67.968->68, 208M8/44k1/64 = 73.979->74
+//#define SYS_CLOCK_KHZ_LP_44K (282000)
+//#define SYS_CLOCK_KHZ_LP_48K (307200)
 
 // Core Voltage
 #define V_CORE_HI VREG_VOLTAGE_1_25
 #define V_CORE_LO VREG_VOLTAGE_1_05
+//#define V_CORE_LO VREG_VOLTAGE_1_25
+
 
 // 初期オーディオサンプル周波数
 #define AUDIO_INITIAL_FREQ (44100)
