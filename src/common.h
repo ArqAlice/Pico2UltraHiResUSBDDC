@@ -54,7 +54,7 @@
 
 // Upsampler control
 // Core0 ratio is for 48k family; 96k uses /2, 192k uses /4 (min 1).
-#define CORE0_UP_RATIO_HP (4)
+#define CORE0_UP_RATIO_HP (8)
 #define CORE0_UP_RATIO_LP (4)
 // Core1 ratio is applied directly (1/2/4 are supported).
 #define CORE1_UP_RATIO_HP (1)
