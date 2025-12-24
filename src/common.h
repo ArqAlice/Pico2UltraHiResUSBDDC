@@ -57,7 +57,7 @@
 #define CORE0_UP_RATIO_HP (8)
 #define CORE0_UP_RATIO_LP (4)
 // Core1 ratio is applied directly (1/2/4 are supported).
-#define CORE1_UP_RATIO_HP (1)
+#define CORE1_UP_RATIO_HP (2)
 #define CORE1_UP_RATIO_LP (1)
 #define DEFAULT_GAIN_RATIO (0.75) // Adjust this according to your filter to avoid clipping.
 
@@ -70,7 +70,7 @@
 #define ENABLE_ESS_DAC_THD_COMPEN (false)
 #define ESS_THD_COMPEN_C2 (0) // 16bit signed int
 #define ESS_THD_COMPEN_C3 (0) // 16bit signed int
-#define ESS_DPLL_BANDWIDTH (0x80) // 0~255, 0 is DPLL off
+#define ESS_DPLL_BANDWIDTH (0xA0) // 0~255, 0 is DPLL off
 #define ESS_DPLL_LOCKSPEED (2)   // 0~16
 #define TIME_ES9038Q2M_DEPOP_USEC (40000)
 #define DAC_ENABLE_PIN (5)
@@ -114,6 +114,8 @@
 #define TIMER0_US (250)
 
 #define TIMER_US_CORE1 (250)
+// Core1 DMA/processing chunk size (us). Larger values give more FFT-FIR time.
+#define CORE1_PROCESS_US (4000)
 
 // エンドポイントバッファサイズ((96+1)kHz*1ms=97以上あればよい)
 #define SIZE_EP_BUFFER (512)

@@ -12,10 +12,10 @@
 #include "common.h"
 #include "upsampling.h"
 
-#define SIZE_DMA_TX_BUF (49 * 2 * CORE0_UP_RATIO_MAX * CORE1_UP_RATIO_MAX * TIMER_US_CORE1 / 1000 + 256)
+#define SIZE_DMA_TX_BUF (49 * 2 * CORE0_UP_RATIO_MAX * CORE1_UP_RATIO_MAX * CORE1_PROCESS_US / 1000 + 256)
 
 // DMA転送バッファはダブルバッファとして使うので2で十分
-#define SIZE_DMA_TX_BUF_STACK 2
+#define SIZE_DMA_TX_BUF_STACK (DEPTH_DMA_TX_BUFFER)
 
 typedef struct
 {
@@ -26,10 +26,10 @@ typedef struct
 typedef struct
 {
     DMA_TX_DATA data[DEPTH_DMA_TX_BUFFER];
-    uint32_t wp;
-    uint32_t rp;
-    uint32_t using;
-    uint32_t prev_write_length;
+    volatile uint32_t wp;
+    volatile uint32_t rp;
+    volatile uint32_t using;
+    volatile uint32_t prev_write_length;
 } DMA_TX_STRUCTURE;
 
 extern void init_i2s_interface(void);

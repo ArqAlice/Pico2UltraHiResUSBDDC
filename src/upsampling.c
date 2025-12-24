@@ -11,6 +11,7 @@
 #include "ringbuffer.h"
 #include "common.h"
 #include "fft_fir_core0.h"
+#include "fft_fir_core1.h"
 
 extern volatile bool is_high_power_mode;
 
@@ -114,6 +115,7 @@ extern void init_upsampling_filter(void)
     initialize_bq_filter_coef();
     clear_bq_filter_delay();
     fft_fir_core0_init();
+    fft_fir_core1_init();
 }
 
 // BiQuad-IIRフィルタの遅延バッファをクリアする
@@ -140,6 +142,23 @@ extern void clear_bq_filter_delay(void)
         hb_state_R_48[i] = 0;
     }
     fft_fir_core0_reset();
+    fft_fir_core1_reset();
+}
+
+uint32_t upsampling_core1_get_block_len(void)
+{
+    uint16_t ratio = get_ratio_upsampling_core1();
+    if (ratio <= 1)
+        return 0;
+    if (ratio == 4)
+        return 0;
+
+    uint32_t freq_in = audio_state.freq * get_ratio_upsampling_core0(audio_state.freq);
+    const FFT_FIR_PROFILE *profile = fft_fir_core0_select_profile(freq_in, ratio, is_high_power_mode);
+    if (profile == NULL)
+        return 0;
+
+    return profile->input_len;
 }
 
 // upsampling biquad IIR filter NOS統合版 (RAM上で実行する)
@@ -311,24 +330,54 @@ single_stage:
 
 uint32_t __not_in_flash_func(upsampling_process_core1)(float *in_L, float *in_R, float *out_L, float *out_R, uint32_t length)
 {
-    uint32_t len_L = length;
-    switch (get_ratio_upsampling_core1())
+    uint16_t ratio = get_ratio_upsampling_core1();
+    if (ratio <= 1)
     {
-    case 4:
-        len_L = fast_BQ_filter_4x_0(length, in_L, out_L, &biquad_filter4L);
-        fast_BQ_filter_4x_0(length, in_R, out_R, &biquad_filter4R);
-        break;
-
-    case 2:
-        len_L = fast_BQ_filter_2x_3(length, in_L, out_L, &biquad_filter3L);
-        fast_BQ_filter_2x_3(length, in_R, out_R, &biquad_filter3R);
-        break;
-
-    case 1:
-    default:
         memcpy(out_L, in_L, sizeof(float) * length);
         memcpy(out_R, in_R, sizeof(float) * length);
-        break;
+        return length;
     }
-    return len_L;
+    if (ratio == 4)
+        goto fallback_iir;
+
+    uint32_t freq_in = audio_state.freq * get_ratio_upsampling_core0(audio_state.freq);
+    const FFT_FIR_PROFILE *profile = fft_fir_core0_select_profile(freq_in, ratio, is_high_power_mode);
+    if (profile == NULL)
+        goto fallback_iir;
+
+    uint32_t block_len = profile->input_len;
+    if (block_len == 0 || length < block_len)
+        return 0;
+
+    uint32_t blocks = length / block_len;
+    uint32_t out_count = 0;
+    for (uint32_t b = 0; b < blocks; b++)
+    {
+        uint32_t offset = b * block_len;
+        uint32_t produced = fft_fir_core1_process_block(
+            profile,
+            in_L + offset,
+            in_R + offset,
+            out_L + out_count,
+            out_R + out_count);
+        if (produced == 0)
+            return 0;
+        out_count += produced;
+    }
+    return out_count;
+
+fallback_iir:
+    if (ratio == 4)
+    {
+        uint32_t len_L = fast_BQ_filter_4x_0(length, in_L, out_L, &biquad_filter4L);
+        fast_BQ_filter_4x_0(length, in_R, out_R, &biquad_filter4R);
+        return len_L;
+    }
+    if (ratio == 2)
+    {
+        uint32_t len_L = fast_BQ_filter_2x_3(length, in_L, out_L, &biquad_filter3L);
+        fast_BQ_filter_2x_3(length, in_R, out_R, &biquad_filter3R);
+        return len_L;
+    }
+    return length;
 }

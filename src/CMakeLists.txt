@@ -33,6 +33,7 @@ add_executable(Pico2UltraHiResUSBDDC
         fft_fir_coef.c
         upsampling.c
         fft_fir_core0.c
+        fft_fir_core1.c
         ringbuffer.c
         debug_with_gpio.c
         ess_specific.c

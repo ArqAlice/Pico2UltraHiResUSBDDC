@@ -17,26 +17,128 @@ static const uint sm = 0;
 static pio_sm_config sm_config;
 static uint offset;
 
-static volatile int dma_ch;
-static dma_channel_config c_dma;
-static volatile bool dma_using_buffer_A = true;
+#define DMA_TX_CHAIN_CHANNELS (2)
+
+typedef enum
+{
+    DMA_CH_STATE_IDLE = 0,
+    DMA_CH_STATE_ARMED,
+    DMA_CH_STATE_RUNNING
+} dma_ch_state_t;
+
+static volatile int dma_ch[DMA_TX_CHAIN_CHANNELS];
+static dma_channel_config c_dma[DMA_TX_CHAIN_CHANNELS];
+static volatile uint8_t dma_ch_state[DMA_TX_CHAIN_CHANNELS];
 DMA_TX_STRUCTURE dma_tx;
 
 bool enable_output = false;
-static bool is_enabled_dma_tx_isr = false;
 
 // PWM
 static uint16_t pwm_slice;
 
-void __not_in_flash_func(dma_tx_irq_handler)(void);
-void __not_in_flash_func(i2s_tx_process)(void);
 void __not_in_flash_func(dma_tx_start)(void);
+static inline uint32_t dma_tx_active_count(void);
+static inline bool dma_tx_any_running(void);
+static void __not_in_flash_func(dma_tx_chain_service)(void);
 
 bool calc_pwm_clkdiv_and_wrap_us(float target_period_us, uint16_t *wrap_out, float *clkdiv_out);
 void set_pwm_isr_1(float period_us);
 void set_period_pwm_us(float period_us);
 void pwm_i2s_streaming_rate_change(void);
 void __not_in_flash_func(pwm_wrap_handler)(void);
+
+static inline uint32_t dma_tx_active_count(void)
+{
+    uint32_t count = 0;
+    for (int i = 0; i < DMA_TX_CHAIN_CHANNELS; i++)
+    {
+        if (dma_ch_state[i] != DMA_CH_STATE_IDLE)
+            count++;
+    }
+    return count;
+}
+
+static inline bool dma_tx_any_running(void)
+{
+    for (int i = 0; i < DMA_TX_CHAIN_CHANNELS; i++)
+    {
+        if (dma_ch_state[i] == DMA_CH_STATE_RUNNING)
+            return true;
+    }
+    return false;
+}
+
+static void __not_in_flash_func(dma_tx_chain_service)(void)
+{
+    for (int i = 0; i < DMA_TX_CHAIN_CHANNELS; i++)
+    {
+        bool busy = dma_channel_is_busy(dma_ch[i]);
+        if (dma_ch_state[i] == DMA_CH_STATE_ARMED)
+        {
+            if (busy)
+                dma_ch_state[i] = DMA_CH_STATE_RUNNING;
+        }
+        else if (dma_ch_state[i] == DMA_CH_STATE_RUNNING)
+        {
+            if (!busy)
+            {
+                dma_ch_state[i] = DMA_CH_STATE_IDLE;
+                if (dma_tx.using > 0)
+                    dma_tx.using--;
+            }
+        }
+    }
+
+    uint32_t active = dma_tx_active_count();
+    int32_t unassigned = (int32_t)dma_tx.using - (int32_t)active;
+    if (unassigned < 0)
+        unassigned = 0;
+
+    while (unassigned > 0)
+    {
+        int idle_idx = -1;
+        for (int i = 0; i < DMA_TX_CHAIN_CHANNELS; i++)
+        {
+            if (dma_ch_state[i] == DMA_CH_STATE_IDLE)
+            {
+                idle_idx = i;
+                break;
+            }
+        }
+        if (idle_idx < 0)
+            break;
+
+        uint32_t rp = dma_tx.rp;
+        dma_channel_set_read_addr(dma_ch[idle_idx], dma_tx.data[rp].tx_buf, false);
+        dma_channel_set_trans_count(dma_ch[idle_idx], dma_tx.data[rp].tx_size, false);
+        dma_tx.rp++;
+        if (dma_tx.rp >= DEPTH_DMA_TX_BUFFER)
+            dma_tx.rp = 0;
+        dma_ch_state[idle_idx] = DMA_CH_STATE_ARMED;
+        active++;
+        unassigned--;
+    }
+
+    if (!dma_tx_any_running())
+    {
+        int armed_count = 0;
+        int start_idx = -1;
+        for (int i = 0; i < DMA_TX_CHAIN_CHANNELS; i++)
+        {
+            if (dma_ch_state[i] == DMA_CH_STATE_ARMED)
+            {
+                armed_count++;
+                if (start_idx < 0)
+                    start_idx = i;
+            }
+        }
+        if (armed_count >= 2 && start_idx >= 0)
+        {
+            dma_channel_start(dma_ch[start_idx]);
+            dma_ch_state[start_idx] = DMA_CH_STATE_RUNNING;
+        }
+    }
+}
 
 void reset_i2s_freq(void)
 {
@@ -71,29 +173,30 @@ void init_i2s_interface(void)
 
     reset_i2s_freq();
 
-    // DMA設定
-    dma_ch = dma_claim_unused_channel(true);
-    dma_channel_set_irq0_enabled(dma_ch, true);               // DMA TX チャネルで IRQ0 有効化
-    irq_set_exclusive_handler(DMA_IRQ_0, dma_tx_irq_handler); // 割り込み関数登録
-    irq_set_enabled(DMA_IRQ_0, true);                         // NVIC有効化
-    irq_set_priority(DMA_IRQ_0, 0);                           // 最優先で割り込み
+    // DMA setup (chained, no IRQ)
+    dma_ch[0] = dma_claim_unused_channel(true);
+    dma_ch[1] = dma_claim_unused_channel(true);
 
-    c_dma = dma_channel_get_default_config(dma_ch);
-    channel_config_set_transfer_data_size(&c_dma, DMA_SIZE_32);
-    channel_config_set_dreq(&c_dma, pio_get_dreq(pio, sm, true));
+    c_dma[0] = dma_channel_get_default_config(dma_ch[0]);
+    channel_config_set_transfer_data_size(&c_dma[0], DMA_SIZE_32);
+    channel_config_set_dreq(&c_dma[0], pio_get_dreq(pio, sm, true));
+    channel_config_set_chain_to(&c_dma[0], dma_ch[1]);
 
-    // DMAデータ初期化
+    c_dma[1] = dma_channel_get_default_config(dma_ch[1]);
+    channel_config_set_transfer_data_size(&c_dma[1], DMA_SIZE_32);
+    channel_config_set_dreq(&c_dma[1], pio_get_dreq(pio, sm, true));
+    channel_config_set_chain_to(&c_dma[1], dma_ch[0]);
+
     memset((void *)&dma_tx, 0, sizeof(DMA_TX_STRUCTURE));
+    memset((void *)dma_ch_state, 0, sizeof(dma_ch_state));
 
-    dma_channel_configure(dma_ch, &c_dma,
-                          &pio->txf[sm], dma_tx.data->tx_buf, SIZE_DMA_TX_BUF, false);
-}
+    dma_channel_set_irq0_enabled(dma_ch[0], false);
+    dma_channel_set_irq0_enabled(dma_ch[1], false);
 
-// DMA TX割り込み処理
-void __not_in_flash_func(dma_tx_irq_handler)(void)
-{
-    i2s_tx_process();
-    dma_hw->ints0 = 1u << dma_ch; // 割り込みフラグクリア
+    dma_channel_configure(dma_ch[0], &c_dma[0],
+                          &pio->txf[sm], dma_tx.data[0].tx_buf, 0, false);
+    dma_channel_configure(dma_ch[1], &c_dma[1],
+                          &pio->txf[sm], dma_tx.data[0].tx_buf, 0, false);
 }
 
 // I2S送信タイミング通知を行う
@@ -109,7 +212,7 @@ static float upsr_core1_Lch[SIZE_DMA_TX_BUF / 2];
 static float upsr_core1_Rch[SIZE_DMA_TX_BUF / 2];
 
 // 転送用バッファを静的確保
-static int32_t buffer_i2s_transmit[SIZE_DMA_TX_BUF];
+
 
 // 出力状態バッファ
 static volatile bool enable_output_prev = false;
@@ -137,89 +240,82 @@ void __not_in_flash_func(dma_tx_start)(void)
         // 入ってくるデータが枯渇した、またはDMA送信バッファに規定量以上データが蓄積されているときはデータ送信処理をしない
         if ((length > 0) && (dma_tx.using < SIZE_DMA_TX_BUF_STACK))
         {
-            int32_t transmit_ref_size = audio_state.freq * get_ratio_upsampling_core0(audio_state.freq) / 1000 * (TIMER_US_CORE1 / 1000.0);
-            length = saturation_i32(length, transmit_ref_size, 0);
-
-            ringbuf_read_array_spinlock((int32_t*)from_core0_Lch, length, &buffer_upsr_data_Lch_0);
-            ringbuf_read_array_spinlock((int32_t*)from_core0_Rch, length, &buffer_upsr_data_Rch_0);
-
-            // Core1で、さらにアップサンプリングをする(絶対250us以内に終わらせること)
-            length = upsampling_process_core1(from_core0_Lch, from_core0_Rch, upsr_core1_Lch, upsr_core1_Rch, length);
-
-            int count = 0;
-            for (uint i = 0; i < length; i++)
+            uint32_t core1_block_len = upsampling_core1_get_block_len();
+            int32_t max_in_len = (int32_t)(sizeof(from_core0_Lch) / sizeof(from_core0_Lch[0]));
+            int32_t transmit_ref_size = (int32_t)(audio_state.freq * get_ratio_upsampling_core0(audio_state.freq) / 1000.0f * (CORE1_PROCESS_US / 1000.0f));
+            if (transmit_ref_size > max_in_len)
+                transmit_ref_size = max_in_len;
+            if (core1_block_len > 0 && transmit_ref_size < (int32_t)core1_block_len)
+                transmit_ref_size = (int32_t)core1_block_len;
+        
+                        while (dma_tx.using < SIZE_DMA_TX_BUF_STACK)
             {
-                buffer_i2s_transmit[count++] = (int32_t)upsr_core1_Lch[i];
-                buffer_i2s_transmit[count++] = (int32_t)upsr_core1_Rch[i];
-            }
+                int32_t avail_len_L = get_size_using(&buffer_upsr_data_Lch_0);
+                int32_t avail_len_R = get_size_using(&buffer_upsr_data_Rch_0);
+                int32_t avail_len = (avail_len_L < avail_len_R) ? avail_len_L : avail_len_R;
+                if (avail_len <= 0)
+                    break;
 
-            uint32_t save = save_and_disable_interrupts();
-            dma_tx.data[dma_tx.wp].tx_size = count;
-            memcpy((void *)dma_tx.data[dma_tx.wp].tx_buf, (void *)buffer_i2s_transmit, sizeof(uint32_t) * dma_tx.data[dma_tx.wp].tx_size);
-            dma_tx.wp++;
-            if (dma_tx.wp >= DEPTH_DMA_TX_BUFFER)
-                dma_tx.wp = 0;
-            dma_tx.using ++;
-            restore_interrupts(save);
+                int32_t chunk_len = saturation_i32(avail_len, transmit_ref_size, 0);
+                if (core1_block_len > 0)
+                {
+                    chunk_len = (chunk_len / (int32_t)core1_block_len) * (int32_t)core1_block_len;
+                    if (chunk_len <= 0)
+                        break;
+                }
 
-            // 初回はこちらでDMAを起動する(2回目以降はDMA割り込みで自動処理)
-            if (dma_tx.prev_write_length == 0)
-                is_enabled_dma_tx_isr = false;
-            if ((!is_enabled_dma_tx_isr) && (!dma_channel_is_busy(dma_ch)))
-            {
-                is_enabled_dma_tx_isr = true;
-                i2s_tx_process();
+                if (ringbuf_read_array_spinlock((int32_t*)from_core0_Lch, chunk_len, &buffer_upsr_data_Lch_0) < 0)
+                    break;
+                if (ringbuf_read_array_spinlock((int32_t*)from_core0_Rch, chunk_len, &buffer_upsr_data_Rch_0) < 0)
+                    break;
+
+                // Core1?????????????????????????????????250us????????????????)
+                int32_t out_len = (int32_t)upsampling_process_core1(from_core0_Lch, from_core0_Rch, upsr_core1_Lch, upsr_core1_Rch, (uint32_t)chunk_len);
+                if (out_len <= 0)
+                    break;
+
+                uint32_t wp = dma_tx.wp;
+                int32_t *tx_buf = (int32_t *)dma_tx.data[wp].tx_buf;
+                int count = 0;
+                for (int32_t i = 0; i < out_len; i++)
+                {
+                    tx_buf[count++] = (int32_t)upsr_core1_Lch[i];
+                    tx_buf[count++] = (int32_t)upsr_core1_Rch[i];
+                }
+
+                uint32_t save = save_and_disable_interrupts();
+                dma_tx.data[wp].tx_size = count;
+                dma_tx.wp++;
+                if (dma_tx.wp >= DEPTH_DMA_TX_BUFFER)
+                    dma_tx.wp = 0;
+                dma_tx.using ++;
+                restore_interrupts(save);
             }
+        
+            // ???????????DMA?????????2????????DMA?????????????????
+
         }
+        dma_tx_chain_service();
     }
     else
     {
-        is_enabled_dma_tx_isr = false;
-        memset((void *)&dma_tx, 0, sizeof(DMA_TX_STRUCTURE));
+        dma_stop_and_clear();
     }
-}
-
-void __not_in_flash_func(i2s_tx_process)(void)
-{
-    if (dma_tx.using == DEPTH_DMA_TX_BUFFER)
-    {
-        // buffer is full
-        dma_tx.prev_write_length = 0;
-        return;
-    }
-
-    if (dma_tx.using == 0)
-    {
-        // buffer is empty
-        dma_tx.prev_write_length = 0;
-        return;
-    }
-
-    // 転送処理
-    dma_channel_set_read_addr(dma_ch, dma_tx.data[dma_tx.rp].tx_buf, false);
-    dma_channel_set_trans_count(dma_ch, dma_tx.data[dma_tx.rp].tx_size, true);
-    dma_tx.prev_write_length = dma_tx.data[dma_tx.rp].tx_size;
-
-    dma_tx.rp++;
-    if (dma_tx.rp >= DEPTH_DMA_TX_BUFFER)
-        dma_tx.rp = 0;
-    dma_tx.using --;
 }
 
 void dma_stop_and_clear(void)
 {
     // DMAを強制停止
-    dma_channel_abort(dma_ch);
+    for (int i = 0; i < DMA_TX_CHAIN_CHANNELS; i++)
+        dma_channel_abort(dma_ch[i]);
 
     // DMAステータスをリセット
-    dma_hw->ints0 = 1u << dma_ch;
+    dma_hw->ints0 = (1u << dma_ch[0]) | (1u << dma_ch[1]);
 
     // FIFOバッファをクリア
     pio_sm_clear_fifos(pio0, 0);
 
     // 使用バッファをゼロクリア
     memset((void *)&dma_tx, 0, sizeof(DMA_TX_STRUCTURE));
-
-    // DMA停止を通知
-    is_enabled_dma_tx_isr = false;
+    memset((void *)dma_ch_state, 0, sizeof(dma_ch_state));
 }
