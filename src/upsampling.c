@@ -224,7 +224,7 @@ void __not_in_flash_func(upsampling_process_core0)(void)
     }
 
     uint16_t stage1_ratio = 0;
-    if (ratio == 8)
+    if (ratio == 8 && !is_high_power_mode)
         stage1_ratio = 4;
 
     if (stage1_ratio > 0)
