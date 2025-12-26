@@ -15,6 +15,9 @@
 #include "ringbuffer.h"
 #include "ess_specific.h"
 
+#define CORE1_FIR_MODE_HALF_BAND (0)
+#define CORE1_FIR_MODE_FFT (1)
+
 // User Configurable ------------------------------------------------------------------
 
 // Test mode
@@ -26,9 +29,6 @@
 #define MFG_NAME ("ArqAlice")
 #define DEVICE_NAME ("Pico2 UltraHiRes USB-DDC")
 #define WEBSITE_ADDR ("y.tomi0131@gmail.com:")
-
-// FIR Filter Type: LINEAR or MINIMUM
-#define LINEAR
 
 // Faster I2S slew rate
 #define I2S_SLEWRATE_FAST_ENABLE (true)
@@ -83,18 +83,18 @@
 // User Configurable end ------------------------------------------------------------
 
 // システムクロック
+//#define SYS_CLOCK_KHZ_44K (412000)
+//#define SYS_CLOCK_KHZ_48K (430000)
 #define SYS_CLOCK_KHZ_44K (282000)
 #define SYS_CLOCK_KHZ_48K (307200)
 #define SYS_CLOCK_KHZ_LP_44K (208000)
 #define SYS_CLOCK_KHZ_LP_48K (208000)
 // 208M8/48k/64 = 67.968->68, 208M8/44k1/64 = 73.979->74
-//#define SYS_CLOCK_KHZ_LP_44K (282000)
-//#define SYS_CLOCK_KHZ_LP_48K (307200)
 
 // Core Voltage
+//#define V_CORE_HI VREG_VOLTAGE_1_50
 #define V_CORE_HI VREG_VOLTAGE_1_25
 #define V_CORE_LO VREG_VOLTAGE_1_05
-//#define V_CORE_LO VREG_VOLTAGE_1_25
 
 
 // 初期オーディオサンプル周波数
@@ -103,6 +103,12 @@
 // アップサンプリング倍率(Core0)
 #define CORE0_UP_RATIO_MAX ((CORE0_UP_RATIO_HP) > (CORE0_UP_RATIO_LP) ? (CORE0_UP_RATIO_HP) : (CORE0_UP_RATIO_LP))
 #define CORE1_UP_RATIO_MAX ((CORE1_UP_RATIO_HP) > (CORE1_UP_RATIO_LP) ? (CORE1_UP_RATIO_HP) : (CORE1_UP_RATIO_LP))
+
+// FIR Filter Type: LINEAR or MINIMUM (Unavailable)
+#define LINEAR
+
+// Core1 FIR Filter Mode
+#define CORE1_FIR_MODE (CORE1_FIR_MODE_HALF_BAND)
 
 // DCDC Control
 #define DCDC_MODE_PIN (23)
@@ -114,8 +120,8 @@
 #define TIMER0_US (250)
 
 #define TIMER_US_CORE1 (250)
-// Core1 DMA/processing chunk size (us). Larger values give more FFT-FIR time.
-#define CORE1_PROCESS_US (4000)
+// Core1 DMA/processing chunk size (us). Larger values give more upsampling time.
+#define CORE1_PROCESS_US (5000)
 
 // エンドポイントバッファサイズ((96+1)kHz*1ms=97以上あればよい)
 #define SIZE_EP_BUFFER (512)

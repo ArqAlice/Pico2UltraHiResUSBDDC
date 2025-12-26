@@ -306,6 +306,11 @@ const FFT_FIR_PROFILE *fft_fir_core1_select_profile(uint32_t freq, uint16_t rati
             return is_high_power ? &fft_fir_profile_core1_in176400_out352800_pb20000_sb158760_u2_hp
                                  : &fft_fir_profile_core1_in176400_out352800_pb20000_sb158760_u2_lp;
         break;
+    case 352800:
+        if (ratio == 2)
+            return is_high_power ? &fft_fir_profile_core1_in352800_out705600_pb20000_sb317520_u2_hp
+                                 : &fft_fir_profile_core1_in352800_out705600_pb20000_sb317520_u2_lp;
+        break;
     case 48000:
         if (ratio == 8)
             return is_high_power ? &fft_fir_profile_core1_in48000_out384000_pb20000_sb172800_u8_hp
@@ -326,6 +331,11 @@ const FFT_FIR_PROFILE *fft_fir_core1_select_profile(uint32_t freq, uint16_t rati
         if (ratio == 2)
             return is_high_power ? &fft_fir_profile_core1_in192000_out384000_pb20000_sb172800_u2_hp
                                  : &fft_fir_profile_core1_in192000_out384000_pb20000_sb172800_u2_lp;
+        break;
+    case 384000:
+        if (ratio == 2)
+            return is_high_power ? &fft_fir_profile_core1_in384000_out768000_pb20000_sb345600_u2_hp
+                                 : &fft_fir_profile_core1_in384000_out768000_pb20000_sb345600_u2_lp;
         break;
     default:
         break;

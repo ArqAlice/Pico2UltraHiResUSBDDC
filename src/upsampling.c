@@ -168,6 +168,10 @@ uint32_t upsampling_core1_get_block_len(void)
         return 0;
 
     uint32_t freq_in = audio_state.freq * get_ratio_upsampling_core0(audio_state.freq);
+#if CORE1_FIR_MODE == CORE1_FIR_MODE_HALF_BAND
+    if (ratio == 2 && freq_in >= 352800)
+        return 0;
+#endif
     const FFT_FIR_PROFILE *profile = fft_fir_core1_select_profile(freq_in, ratio, is_high_power_mode);
     if (profile == NULL)
         return 0;
@@ -356,6 +360,7 @@ uint32_t __not_in_flash_func(upsampling_process_core1)(float *in_L, float *in_R,
         goto fallback_iir;
 
     uint32_t freq_in = audio_state.freq * get_ratio_upsampling_core0(audio_state.freq);
+#if CORE1_FIR_MODE == CORE1_FIR_MODE_HALF_BAND
     if (ratio == 2 && freq_in >= 352800)
     {
         const float *hb_even = is_44k1_family ? fft_fir_halfband_even_44_hi : fft_fir_halfband_even_48_hi;
@@ -368,6 +373,7 @@ uint32_t __not_in_flash_func(upsampling_process_core1)(float *in_L, float *in_R,
         halfband_interp2(in_R, out_R, length, hb_even, hb_len, hb_center, hb_center_index, hb_state_R);
         return length * 2u;
     }
+#endif
     const FFT_FIR_PROFILE *profile = fft_fir_core1_select_profile(freq_in, ratio, is_high_power_mode);
     if (profile == NULL)
         goto fallback_iir;
