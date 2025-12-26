@@ -121,7 +121,7 @@
 
 #define TIMER_US_CORE1 (250)
 // Core1 DMA/processing chunk size (us). Larger values give more upsampling time.
-#define CORE1_PROCESS_US (6000)
+#define CORE1_PROCESS_US (5000)
 
 // エンドポイントバッファサイズ((96+1)kHz*1ms=97以上あればよい)
 #define SIZE_EP_BUFFER (512)
