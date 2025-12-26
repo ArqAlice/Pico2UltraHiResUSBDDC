@@ -281,6 +281,58 @@ void fft_fir_core1_reset(void)
     memset(&state_R, 0, sizeof(state_R));
 }
 
+const FFT_FIR_PROFILE *fft_fir_core1_select_profile(uint32_t freq, uint16_t ratio, bool is_high_power)
+{
+    switch (freq)
+    {
+    case 44100:
+        if (ratio == 8)
+            return is_high_power ? &fft_fir_profile_core1_in44100_out352800_pb20000_sb158760_u8_hp
+                                 : &fft_fir_profile_core1_in44100_out352800_pb20000_sb158760_u8_lp;
+        if (ratio == 4)
+            return is_high_power ? &fft_fir_profile_core1_in44100_out176400_pb20000_sb79380_u4_hp
+                                 : &fft_fir_profile_core1_in44100_out176400_pb20000_sb79380_u4_lp;
+        break;
+    case 88200:
+        if (ratio == 4)
+            return is_high_power ? &fft_fir_profile_core1_in88200_out352800_pb20000_sb158760_u4_hp
+                                 : &fft_fir_profile_core1_in88200_out352800_pb20000_sb158760_u4_lp;
+        if (ratio == 2)
+            return is_high_power ? &fft_fir_profile_core1_in88200_out176400_pb20000_sb79380_u2_hp
+                                 : &fft_fir_profile_core1_in88200_out176400_pb20000_sb79380_u2_lp;
+        break;
+    case 176400:
+        if (ratio == 2)
+            return is_high_power ? &fft_fir_profile_core1_in176400_out352800_pb20000_sb158760_u2_hp
+                                 : &fft_fir_profile_core1_in176400_out352800_pb20000_sb158760_u2_lp;
+        break;
+    case 48000:
+        if (ratio == 8)
+            return is_high_power ? &fft_fir_profile_core1_in48000_out384000_pb20000_sb172800_u8_hp
+                                 : &fft_fir_profile_core1_in48000_out384000_pb20000_sb172800_u8_lp;
+        if (ratio == 4)
+            return is_high_power ? &fft_fir_profile_core1_in48000_out192000_pb20000_sb86400_u4_hp
+                                 : &fft_fir_profile_core1_in48000_out192000_pb20000_sb86400_u4_lp;
+        break;
+    case 96000:
+        if (ratio == 4)
+            return is_high_power ? &fft_fir_profile_core1_in96000_out384000_pb20000_sb172800_u4_hp
+                                 : &fft_fir_profile_core1_in96000_out384000_pb20000_sb172800_u4_lp;
+        if (ratio == 2)
+            return is_high_power ? &fft_fir_profile_core1_in96000_out192000_pb20000_sb86400_u2_hp
+                                 : &fft_fir_profile_core1_in96000_out192000_pb20000_sb86400_u2_lp;
+        break;
+    case 192000:
+        if (ratio == 2)
+            return is_high_power ? &fft_fir_profile_core1_in192000_out384000_pb20000_sb172800_u2_hp
+                                 : &fft_fir_profile_core1_in192000_out384000_pb20000_sb172800_u2_lp;
+        break;
+    default:
+        break;
+    }
+    return NULL;
+}
+
 uint32_t __not_in_flash_func(fft_fir_core1_process_block)(
     const FFT_FIR_PROFILE *profile,
     const float *in_L,

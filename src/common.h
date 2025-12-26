@@ -120,8 +120,8 @@
 // エンドポイントバッファサイズ((96+1)kHz*1ms=97以上あればよい)
 #define SIZE_EP_BUFFER (512)
 
-// アップサンプリングバッファサイズ(10ms超の揺らぎを許容しつつ余裕を持たせる)
-#define SIZE_UPSAMPLE_CORE0 (8192)
+// アップサンプリングバッファサイズ
+#define SIZE_UPSAMPLE_CORE0 (8192) // Core0 Upsampling Buffer Size (samples per channel)
 
 // DMA転送バッファサイズ 3以上あればよい
 #define DEPTH_DMA_TX_BUFFER (3)

@@ -14,6 +14,7 @@
 
 extern void fft_fir_core1_init(void);
 extern void fft_fir_core1_reset(void);
+extern const FFT_FIR_PROFILE *fft_fir_core1_select_profile(uint32_t freq, uint16_t ratio, bool is_high_power);
 extern uint32_t __not_in_flash_func(fft_fir_core1_process_block)(
     const FFT_FIR_PROFILE *profile,
     const float *in_L,

@@ -78,4 +78,13 @@ target_link_libraries(Pico2UltraHiResUSBDDC
         hardware_i2c
 )
 
+target_link_options(Pico2UltraHiResUSBDDC PRIVATE
+        -flto
+        "LINKER:-u,__wrap_printf"
+        "LINKER:-u,__wrap_puts"
+        "LINKER:-u,__wrap_putchar"
+        "LINKER:-u,__wrap_getchar"
+        "LINKER:-u,__wrap_vprintf"
+)
+
 pico_add_extra_outputs(Pico2UltraHiResUSBDDC)

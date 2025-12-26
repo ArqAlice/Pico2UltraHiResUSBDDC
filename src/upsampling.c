@@ -36,6 +36,10 @@ static float hb_state_L_44[FFT_FIR_HALF_BAND_EVEN_TAPS_44];
 static float hb_state_R_44[FFT_FIR_HALF_BAND_EVEN_TAPS_44];
 static float hb_state_L_48[FFT_FIR_HALF_BAND_EVEN_TAPS_48];
 static float hb_state_R_48[FFT_FIR_HALF_BAND_EVEN_TAPS_48];
+static float hb_state_core1_L_44_hi[FFT_FIR_HALF_BAND_EVEN_TAPS_44_HI];
+static float hb_state_core1_R_44_hi[FFT_FIR_HALF_BAND_EVEN_TAPS_44_HI];
+static float hb_state_core1_L_48_hi[FFT_FIR_HALF_BAND_EVEN_TAPS_48_HI];
+static float hb_state_core1_R_48_hi[FFT_FIR_HALF_BAND_EVEN_TAPS_48_HI];
 
 static void __not_in_flash_func(halfband_interp2)(
     const float *input,
@@ -141,6 +145,16 @@ extern void clear_bq_filter_delay(void)
         hb_state_L_48[i] = 0;
         hb_state_R_48[i] = 0;
     }
+    for (uint16_t i = 0; i < FFT_FIR_HALF_BAND_EVEN_TAPS_44_HI; i++)
+    {
+        hb_state_core1_L_44_hi[i] = 0;
+        hb_state_core1_R_44_hi[i] = 0;
+    }
+    for (uint16_t i = 0; i < FFT_FIR_HALF_BAND_EVEN_TAPS_48_HI; i++)
+    {
+        hb_state_core1_L_48_hi[i] = 0;
+        hb_state_core1_R_48_hi[i] = 0;
+    }
     fft_fir_core0_reset();
     fft_fir_core1_reset();
 }
@@ -154,7 +168,7 @@ uint32_t upsampling_core1_get_block_len(void)
         return 0;
 
     uint32_t freq_in = audio_state.freq * get_ratio_upsampling_core0(audio_state.freq);
-    const FFT_FIR_PROFILE *profile = fft_fir_core0_select_profile(freq_in, ratio, is_high_power_mode);
+    const FFT_FIR_PROFILE *profile = fft_fir_core1_select_profile(freq_in, ratio, is_high_power_mode);
     if (profile == NULL)
         return 0;
 
@@ -331,6 +345,7 @@ single_stage:
 uint32_t __not_in_flash_func(upsampling_process_core1)(float *in_L, float *in_R, float *out_L, float *out_R, uint32_t length)
 {
     uint16_t ratio = get_ratio_upsampling_core1();
+    bool is_44k1_family = (audio_state.freq == 44100 || audio_state.freq == 88200 || audio_state.freq == 176400);
     if (ratio <= 1)
     {
         memcpy(out_L, in_L, sizeof(float) * length);
@@ -341,7 +356,19 @@ uint32_t __not_in_flash_func(upsampling_process_core1)(float *in_L, float *in_R,
         goto fallback_iir;
 
     uint32_t freq_in = audio_state.freq * get_ratio_upsampling_core0(audio_state.freq);
-    const FFT_FIR_PROFILE *profile = fft_fir_core0_select_profile(freq_in, ratio, is_high_power_mode);
+    if (ratio == 2 && freq_in >= 352800)
+    {
+        const float *hb_even = is_44k1_family ? fft_fir_halfband_even_44_hi : fft_fir_halfband_even_48_hi;
+        float hb_center = is_44k1_family ? fft_fir_halfband_center_44_hi : fft_fir_halfband_center_48_hi;
+        uint32_t hb_len = is_44k1_family ? FFT_FIR_HALF_BAND_EVEN_TAPS_44_HI : FFT_FIR_HALF_BAND_EVEN_TAPS_48_HI;
+        uint32_t hb_center_index = is_44k1_family ? FFT_FIR_HALF_BAND_CENTER_INDEX_44_HI : FFT_FIR_HALF_BAND_CENTER_INDEX_48_HI;
+        float *hb_state_L = is_44k1_family ? hb_state_core1_L_44_hi : hb_state_core1_L_48_hi;
+        float *hb_state_R = is_44k1_family ? hb_state_core1_R_44_hi : hb_state_core1_R_48_hi;
+        halfband_interp2(in_L, out_L, length, hb_even, hb_len, hb_center, hb_center_index, hb_state_L);
+        halfband_interp2(in_R, out_R, length, hb_even, hb_len, hb_center, hb_center_index, hb_state_R);
+        return length * 2u;
+    }
+    const FFT_FIR_PROFILE *profile = fft_fir_core1_select_profile(freq_in, ratio, is_high_power_mode);
     if (profile == NULL)
         goto fallback_iir;
 
