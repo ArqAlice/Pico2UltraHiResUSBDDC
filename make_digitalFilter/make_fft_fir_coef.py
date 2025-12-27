@@ -19,6 +19,7 @@ CORE1_PASS_HZ = 20000.0
 CORE1_STOP_RATIO = 0.45
 CORE1_ATTEN_HP_DB = 140.0
 CORE1_ATTEN_LP_DB = 110.0
+CORE1_POLY_TAPS_MAX = 48
 
 # Halfband FIR filter specs
 # need to set "passband < fs_out/4 < stopband"
@@ -229,6 +230,15 @@ CORE1_SPECS = [
     make_core1_spec(768000.0, 2, HEAD_BLOCK_LEN_SMALL, TAIL_BLOCK_LEN_SMALL, MAX_TAIL_PARTS_SMALL),
 ]
 
+CORE1_POLY_SPECS = [
+    make_core1_spec(176400.0, 2, HEAD_BLOCK_LEN_SMALL, TAIL_BLOCK_LEN_SMALL, MAX_TAIL_PARTS_SMALL),
+    make_core1_spec(192000.0, 2, HEAD_BLOCK_LEN_SMALL, TAIL_BLOCK_LEN_SMALL, MAX_TAIL_PARTS_SMALL),
+    make_core1_spec(352800.0, 2, HEAD_BLOCK_LEN_SMALL, TAIL_BLOCK_LEN_SMALL, MAX_TAIL_PARTS_SMALL),
+    make_core1_spec(384000.0, 2, HEAD_BLOCK_LEN_SMALL, TAIL_BLOCK_LEN_SMALL, MAX_TAIL_PARTS_SMALL),
+    make_core1_spec(705600.0, 2, HEAD_BLOCK_LEN_SMALL, TAIL_BLOCK_LEN_SMALL, MAX_TAIL_PARTS_SMALL),
+    make_core1_spec(768000.0, 2, HEAD_BLOCK_LEN_SMALL, TAIL_BLOCK_LEN_SMALL, MAX_TAIL_PARTS_SMALL),
+]
+
 
 def align_to_multiple(value: int, step: int) -> int:
     if value % step == 0:
@@ -256,6 +266,27 @@ def design_filter(spec: Spec, atten_db: float):
     taps_guess = align_to_multiple(taps_guess, spec.up_ratio)
     max_phase_len = max(spec.head_block_len, spec.tail_block_len * spec.max_tail_parts)
     max_taps = spec.up_ratio * max_phase_len
+    taps_guess = min(taps_guess, max_taps)
+
+    best = None
+    for taps_count in range(taps_guess, max_taps + 1, spec.up_ratio):
+        taps = signal.firwin(taps_count, spec.f_pass, window=("kaiser", beta), fs=spec.fs_out)
+        taps *= spec.up_ratio
+        stop_att = measure_stop_atten_db(taps, spec.fs_out, spec.f_stop)
+        if best is None or stop_att > best[2]:
+            best = (taps, beta, stop_att)
+        if stop_att >= atten_db:
+            return taps, beta, stop_att
+
+    return best
+
+
+def design_polyphase_filter(spec: Spec, atten_db: float, max_taps: int):
+    width = spec.f_stop - spec.f_pass
+    norm_width = width / (spec.fs_out / 2.0)
+    taps_guess, beta = signal.kaiserord(atten_db, norm_width)
+    taps_guess = max(2, int(taps_guess))
+    taps_guess = align_to_multiple(taps_guess, spec.up_ratio)
     taps_guess = min(taps_guess, max_taps)
 
     best = None
@@ -424,6 +455,40 @@ def add_profiles(specs: list, name_prefix: str, profiles: list, maxima: dict):
             maxima["tail_fft_len"] = max(maxima["tail_fft_len"], tail_fft_len)
 
 
+def add_poly_profiles(specs: list, poly_profiles: list, maxima: dict):
+    for spec in specs:
+        for suffix, atten in (("hp", spec.atten_hp_db), ("lp", spec.atten_lp_db)):
+            result = design_polyphase_filter(spec, atten, CORE1_POLY_TAPS_MAX)
+            if result is None:
+                raise RuntimeError(f"Failed to design polyphase filter for {spec.name}_{suffix}")
+            taps, beta, stop_att = result
+            taps_count = taps.shape[0]
+            if taps_count % spec.up_ratio != 0:
+                raise RuntimeError("polyphase tap count not divisible by up_ratio")
+            phase_len = taps_count // spec.up_ratio
+            even_taps = taps[::2].astype(np.float32)
+            odd_taps = taps[1::2].astype(np.float32)
+            if even_taps.shape[0] != phase_len or odd_taps.shape[0] != phase_len:
+                raise RuntimeError("polyphase tap length mismatch")
+            dc_gain = float(np.sum(taps))
+            gain_ratio = 1.0 / dc_gain if abs(dc_gain) > 1e-9 else 1.0
+            poly_profiles.append(
+                {
+                    "spec": spec,
+                    "suffix": suffix,
+                    "taps_count": taps_count,
+                    "phase_len": phase_len,
+                    "stop_att": stop_att,
+                    "even_taps": even_taps,
+                    "odd_taps": odd_taps,
+                    "dc_gain": dc_gain,
+                    "gain_ratio": gain_ratio,
+                }
+            )
+            maxima["poly_taps"] = max(maxima["poly_taps"], taps_count)
+            maxima["poly_phase_len"] = max(maxima["poly_phase_len"], phase_len)
+
+
 def main():
     out_dir = os.path.join(os.path.dirname(__file__), "..", "src")
     os.makedirs(out_dir, exist_ok=True)
@@ -440,6 +505,8 @@ def main():
         "tail_block_len": 0,
         "head_fft_len": 0,
         "tail_fft_len": 0,
+        "poly_taps": 0,
+        "poly_phase_len": 0,
     }
 
     hb44_even, hb44_center, hb44_center_index, hb44_taps, hb44_beta, hb44_stop_att = design_halfband(
@@ -457,6 +524,8 @@ def main():
 
     add_profiles(CORE0_SPECS, "", profiles, maxima)
     add_profiles(CORE1_SPECS, "core1_", profiles, maxima)
+    poly_profiles = []
+    add_poly_profiles(CORE1_POLY_SPECS, poly_profiles, maxima)
 
     max_fft_len = max(maxima["head_fft_len"], maxima["tail_fft_len"])
     with open(header_path, "w", encoding="utf-8") as hf:
@@ -478,6 +547,8 @@ def main():
         hf.write(f"#define FFT_FIR_MAX_PHASE_LEN ({maxima['phase_len']})\n")
         hf.write("#define FFT_FIR_MAX_INPUT (FFT_FIR_HEAD_BLOCK_LEN)\n")
         hf.write("#define FFT_FIR_MAX_OUTPUT (FFT_FIR_HEAD_BLOCK_LEN * FFT_FIR_MAX_UP_RATIO)\n\n")
+        hf.write(f"#define CORE1_POLY_TAPS_MAX ({maxima['poly_taps']})\n")
+        hf.write(f"#define CORE1_POLY_PHASE_LEN_MAX ({maxima['poly_phase_len']})\n\n")
         hf.write(f"#define FFT_FIR_HALF_BAND_EVEN_TAPS_44 ({hb44_even.shape[0]})\n")
         hf.write(f"#define FFT_FIR_HALF_BAND_CENTER_INDEX_44 ({hb44_center_index})\n")
         hf.write(f"#define FFT_FIR_HALF_BAND_EVEN_TAPS_48 ({hb48_even.shape[0]})\n")
@@ -506,6 +577,19 @@ def main():
         hf.write("    const float *h_tail_fft;\n")
         hf.write("} FFT_FIR_PROFILE;\n\n")
 
+        hf.write("typedef struct\n{\n")
+        hf.write("    uint32_t fs_out_hz;\n")
+        hf.write("    uint32_t passband_hz;\n")
+        hf.write("    uint32_t stopband_hz;\n")
+        hf.write("    uint16_t up_ratio;\n")
+        hf.write("    uint16_t taps;\n")
+        hf.write("    uint16_t phase_len;\n")
+        hf.write("    float dc_gain;\n")
+        hf.write("    float gain_ratio;\n")
+        hf.write("    const float *even_taps;\n")
+        hf.write("    const float *odd_taps;\n")
+        hf.write("} CORE1_POLY_PROFILE;\n\n")
+
         for profile in profiles:
             spec = profile["spec"]
             suffix = profile["suffix"]
@@ -522,11 +606,23 @@ def main():
         hf.write("extern const float fft_fir_halfband_center_44_hi;\n")
         hf.write("extern const float fft_fir_halfband_center_48_hi;\n")
         hf.write("\n")
+        for profile in poly_profiles:
+            spec = profile["spec"]
+            suffix = profile["suffix"]
+            name_id = f"core1_poly_{spec.name}_{suffix}"
+            hf.write(f"extern const float {name_id}_even[];\n")
+            hf.write(f"extern const float {name_id}_odd[];\n")
+        hf.write("\n")
         for profile in profiles:
             spec = profile["spec"]
             suffix = profile["suffix"]
             name_id = f"{profile['name_prefix']}{spec.name}_{suffix}"
             hf.write(f"extern const FFT_FIR_PROFILE fft_fir_profile_{name_id};\n")
+        for profile in poly_profiles:
+            spec = profile["spec"]
+            suffix = profile["suffix"]
+            name_id = f"core1_poly_{spec.name}_{suffix}"
+            hf.write(f"extern const CORE1_POLY_PROFILE {name_id};\n")
         hf.write("\n#endif\n")
 
     with open(source_path, "w", encoding="utf-8") as cf:
@@ -588,6 +684,23 @@ def main():
         cf.write("\n};\n\n")
         cf.write(f"const float fft_fir_halfband_center_48_hi = {hb48_hi_center:.9e}f;\n\n")
 
+        for profile in poly_profiles:
+            spec = profile["spec"]
+            suffix = profile["suffix"]
+            taps_count = profile["taps_count"]
+            phase_len = profile["phase_len"]
+            stop_att = profile["stop_att"]
+            name_id = f"core1_poly_{spec.name}_{suffix}"
+            cf.write(
+                f"/* {name_id}: taps={taps_count}, phase_len={phase_len}, stop_att={stop_att:.2f} dB */\n"
+            )
+            cf.write(f"const float {name_id}_even[] = {{\n")
+            cf.write(format_c_array(profile['even_taps']))
+            cf.write("\n};\n\n")
+            cf.write(f"const float {name_id}_odd[] = {{\n")
+            cf.write(format_c_array(profile['odd_taps']))
+            cf.write("\n};\n\n")
+
         for profile in profiles:
             spec = profile["spec"]
             suffix = profile["suffix"]
@@ -613,6 +726,25 @@ def main():
             cf.write(f"    .gain_ratio = {profile['gain_ratio']:.9e}f,\n")
             cf.write(f"    .h_head_fft = fft_fir_head_{name_id},\n")
             cf.write(f"    .h_tail_fft = fft_fir_tail_{name_id},\n")
+            cf.write("};\n\n")
+
+        for profile in poly_profiles:
+            spec = profile["spec"]
+            suffix = profile["suffix"]
+            taps_count = profile["taps_count"]
+            phase_len = profile["phase_len"]
+            name_id = f"core1_poly_{spec.name}_{suffix}"
+            cf.write(f"const CORE1_POLY_PROFILE {name_id} = {{\n")
+            cf.write(f"    .fs_out_hz = {int(spec.fs_out)},\n")
+            cf.write(f"    .passband_hz = {int(spec.f_pass)},\n")
+            cf.write(f"    .stopband_hz = {int(spec.f_stop)},\n")
+            cf.write(f"    .up_ratio = {spec.up_ratio},\n")
+            cf.write(f"    .taps = {taps_count},\n")
+            cf.write(f"    .phase_len = {phase_len},\n")
+            cf.write(f"    .dc_gain = {profile['dc_gain']:.9e}f,\n")
+            cf.write(f"    .gain_ratio = {profile['gain_ratio']:.9e}f,\n")
+            cf.write(f"    .even_taps = {name_id}_even,\n")
+            cf.write(f"    .odd_taps = {name_id}_odd,\n")
             cf.write("};\n\n")
 
 

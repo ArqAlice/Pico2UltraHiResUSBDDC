@@ -29038,6 +29038,174 @@ const float fft_fir_halfband_even_48_hi[] = {
 
 const float fft_fir_halfband_center_48_hi = 1.000000051e+00f;
 
+/* core1_poly_in88200_out176400_pb20000_sb79380_u2_hp: taps=30, phase_len=15, stop_att=145.31 dB */
+const float core1_poly_in88200_out176400_pb20000_sb79380_u2_hp_even[] = {
+    -1.702610319e-07f, 2.865490205e-05f, 7.682064897e-04f, -1.212926349e-03f,
+    -2.234254405e-02f, -4.568723496e-03f, 2.027925104e-01f, 4.418785572e-01f,
+    3.463874459e-01f, 7.295896858e-02f, -2.872321941e-02f, -9.252035059e-03f,
+    1.050663413e-03f, 2.361734951e-04f, -1.557090741e-06f
+};
+
+const float core1_poly_in88200_out176400_pb20000_sb79380_u2_hp_odd[] = {
+    -1.557090741e-06f, 2.361734951e-04f, 1.050663413e-03f, -9.252035059e-03f,
+    -2.872321941e-02f, 7.295896858e-02f, 3.463874459e-01f, 4.418785572e-01f,
+    2.027925104e-01f, -4.568723496e-03f, -2.234254405e-02f, -1.212926349e-03f,
+    7.682064897e-04f, 2.865490205e-05f, -1.702610319e-07f
+};
+
+/* core1_poly_in88200_out176400_pb20000_sb79380_u2_lp: taps=24, phase_len=12, stop_att=118.31 dB */
+const float core1_poly_in88200_out176400_pb20000_sb79380_u2_lp_even[] = {
+    6.182525340e-06f, 3.241560189e-04f, -5.353996065e-03f, -2.245078236e-02f,
+    6.685553491e-02f, 3.424808979e-01f, 4.431932867e-01f, 1.946791261e-01f,
+    -3.916065674e-03f, -1.539369207e-02f, -5.470527685e-04f, 1.224045118e-04f
+};
+
+const float core1_poly_in88200_out176400_pb20000_sb79380_u2_lp_odd[] = {
+    1.224045118e-04f, -5.470527685e-04f, -1.539369207e-02f, -3.916065674e-03f,
+    1.946791261e-01f, 4.431932867e-01f, 3.424808979e-01f, 6.685553491e-02f,
+    -2.245078236e-02f, -5.353996065e-03f, 3.241560189e-04f, 6.182525340e-06f
+};
+
+/* core1_poly_in96000_out192000_pb20000_sb86400_u2_hp: taps=28, phase_len=14, stop_att=145.72 dB */
+const float core1_poly_in96000_out192000_pb20000_sb86400_u2_hp_even[] = {
+    1.307309674e-07f, 7.548029680e-05f, -8.035410428e-05f, -8.108035661e-03f,
+    -1.551511046e-02f, 8.617196977e-02f, 3.286176920e-01f, 4.115679562e-01f,
+    2.026619017e-01f, 1.262251381e-02f, -1.596462727e-02f, -2.260420704e-03f,
+    2.009453892e-04f, 9.955567293e-06f
+};
+
+const float core1_poly_in96000_out192000_pb20000_sb86400_u2_hp_odd[] = {
+    9.955567293e-06f, 2.009453892e-04f, -2.260420704e-03f, -1.596462727e-02f,
+    1.262251381e-02f, 2.026619017e-01f, 4.115679562e-01f, 3.286176920e-01f,
+    8.617196977e-02f, -1.551511046e-02f, -8.108035661e-03f, -8.035410428e-05f,
+    7.548029680e-05f, 1.307309674e-07f
+};
+
+/* core1_poly_in96000_out192000_pb20000_sb86400_u2_lp: taps=22, phase_len=11, stop_att=110.67 dB */
+const float core1_poly_in96000_out192000_pb20000_sb86400_u2_lp_even[] = {
+    4.084612101e-06f, -6.687961286e-04f, -9.354122914e-03f, 1.022562664e-02f,
+    1.932251453e-01f, 4.175845981e-01f, 3.267279565e-01f, 7.687147707e-02f,
+    -1.098118443e-02f, -3.623153549e-03f, -1.163575234e-05f
+};
+
+const float core1_poly_in96000_out192000_pb20000_sb86400_u2_lp_odd[] = {
+    -1.163575234e-05f, -3.623153549e-03f, -1.098118443e-02f, 7.687147707e-02f,
+    3.267279565e-01f, 4.175845981e-01f, 1.932251453e-01f, 1.022562664e-02f,
+    -9.354122914e-03f, -6.687961286e-04f, 4.084612101e-06f
+};
+
+/* core1_poly_in176400_out352800_pb20000_sb158760_u2_hp: taps=26, phase_len=13, stop_att=149.85 dB */
+const float core1_poly_in176400_out352800_pb20000_sb158760_u2_hp_even[] = {
+    -3.184033801e-07f, -8.217793948e-05f, 2.767664264e-04f, 1.245673746e-02f,
+    7.308694720e-02f, 1.965525150e-01f, 2.936074734e-01f, 2.571880817e-01f,
+    1.299030930e-01f, 3.405138478e-02f, 3.140525427e-03f, -1.664910233e-04f,
+    -1.456432619e-05f
+};
+
+const float core1_poly_in176400_out352800_pb20000_sb158760_u2_hp_odd[] = {
+    -1.456432619e-05f, -1.664910233e-04f, 3.140525427e-03f, 3.405138478e-02f,
+    1.299030930e-01f, 2.571880817e-01f, 2.936074734e-01f, 1.965525150e-01f,
+    7.308694720e-02f, 1.245673746e-02f, 2.767664264e-04f, -8.217793948e-05f,
+    -3.184033801e-07f
+};
+
+/* core1_poly_in176400_out352800_pb20000_sb158760_u2_lp: taps=20, phase_len=10, stop_att=111.45 dB */
+const float core1_poly_in176400_out352800_pb20000_sb158760_u2_lp_even[] = {
+    -2.739806405e-06f, 9.636558243e-04f, 2.199064568e-02f, 1.184949875e-01f,
+    2.745252252e-01f, 3.226573169e-01f, 1.974978596e-01f, 5.784235895e-02f,
+    5.991628394e-03f, 3.904247569e-05f
+};
+
+const float core1_poly_in176400_out352800_pb20000_sb158760_u2_lp_odd[] = {
+    3.904247569e-05f, 5.991628394e-03f, 5.784235895e-02f, 1.974978596e-01f,
+    3.226573169e-01f, 2.745252252e-01f, 1.184949875e-01f, 2.199064568e-02f,
+    9.636558243e-04f, -2.739806405e-06f
+};
+
+/* core1_poly_in192000_out384000_pb20000_sb172800_u2_hp: taps=26, phase_len=13, stop_att=146.81 dB */
+const float core1_poly_in192000_out384000_pb20000_sb172800_u2_hp_even[] = {
+    -2.832138932e-07f, -4.478191477e-05f, 9.064680198e-04f, 1.520999335e-02f,
+    7.695648819e-02f, 1.951512396e-01f, 2.854970396e-01f, 2.517711222e-01f,
+    1.320007592e-01f, 3.788838908e-02f, 4.650553223e-03f, 2.401789425e-05f,
+    -1.099303699e-05f
+};
+
+const float core1_poly_in192000_out384000_pb20000_sb172800_u2_hp_odd[] = {
+    -1.099303699e-05f, 2.401789425e-05f, 4.650553223e-03f, 3.788838908e-02f,
+    1.320007592e-01f, 2.517711222e-01f, 2.854970396e-01f, 1.951512396e-01f,
+    7.695648819e-02f, 1.520999335e-02f, 9.064680198e-04f, -4.478191477e-05f,
+    -2.832138932e-07f
+};
+
+/* core1_poly_in192000_out384000_pb20000_sb172800_u2_lp: taps=20, phase_len=10, stop_att=114.84 dB */
+const float core1_poly_in192000_out384000_pb20000_sb172800_u2_lp_even[] = {
+    3.979367023e-07f, 1.436727005e-03f, 2.463538386e-02f, 1.212291047e-01f,
+    2.705747783e-01f, 3.158828318e-01f, 1.974263340e-01f, 6.131989509e-02f,
+    7.365793921e-03f, 1.287438354e-04f
+};
+
+const float core1_poly_in192000_out384000_pb20000_sb172800_u2_lp_odd[] = {
+    1.287438354e-04f, 7.365793921e-03f, 6.131989509e-02f, 1.974263340e-01f,
+    3.158828318e-01f, 2.705747783e-01f, 1.212291047e-01f, 2.463538386e-02f,
+    1.436727005e-03f, 3.979367023e-07f
+};
+
+/* core1_poly_in352800_out705600_pb20000_sb317520_u2_hp: taps=24, phase_len=12, stop_att=145.28 dB */
+const float core1_poly_in352800_out705600_pb20000_sb317520_u2_hp_even[] = {
+    5.933045486e-07f, 3.964065399e-04f, 7.046122570e-03f, 4.327857122e-02f,
+    1.345085353e-01f, 2.441352159e-01f, 2.743389904e-01f, 1.928512305e-01f,
+    8.210907876e-02f, 1.929555647e-02f, 1.996744424e-03f, 4.296363113e-05f
+};
+
+const float core1_poly_in352800_out705600_pb20000_sb317520_u2_hp_odd[] = {
+    4.296363113e-05f, 1.996744424e-03f, 1.929555647e-02f, 8.210907876e-02f,
+    1.928512305e-01f, 2.743389904e-01f, 2.441352159e-01f, 1.345085353e-01f,
+    4.327857122e-02f, 7.046122570e-03f, 3.964065399e-04f, 5.933045486e-07f
+};
+
+/* core1_poly_in352800_out705600_pb20000_sb317520_u2_lp: taps=26, phase_len=13, stop_att=110.14 dB */
+const float core1_poly_in352800_out705600_pb20000_sb317520_u2_lp_even[] = {
+    9.638325537e-06f, 9.795289952e-04f, 9.074789472e-03f, 3.881919757e-02f,
+    1.012809947e-01f, 1.798045486e-01f, 2.282331288e-01f, 2.108907551e-01f,
+    1.410329938e-01f, 6.611425430e-02f, 2.018455788e-02f, 3.391755512e-03f,
+    1.838611643e-04f
+};
+
+const float core1_poly_in352800_out705600_pb20000_sb317520_u2_lp_odd[] = {
+    1.838611643e-04f, 3.391755512e-03f, 2.018455788e-02f, 6.611425430e-02f,
+    1.410329938e-01f, 2.108907551e-01f, 2.282331288e-01f, 1.798045486e-01f,
+    1.012809947e-01f, 3.881919757e-02f, 9.074789472e-03f, 9.795289952e-04f,
+    9.638325537e-06f
+};
+
+/* core1_poly_in384000_out768000_pb20000_sb345600_u2_hp: taps=24, phase_len=12, stop_att=144.59 dB */
+const float core1_poly_in384000_out768000_pb20000_sb345600_u2_hp_even[] = {
+    6.874717542e-07f, 4.316361155e-04f, 7.374731824e-03f, 4.414051771e-02f,
+    1.349840909e-01f, 2.429289073e-01f, 2.725316584e-01f, 1.925426722e-01f,
+    8.298166841e-02f, 1.990822330e-02f, 2.127148444e-03f, 4.807878940e-05f
+};
+
+const float core1_poly_in384000_out768000_pb20000_sb345600_u2_hp_odd[] = {
+    4.807878940e-05f, 2.127148444e-03f, 1.990822330e-02f, 8.298166841e-02f,
+    1.925426722e-01f, 2.725316584e-01f, 2.429289073e-01f, 1.349840909e-01f,
+    4.414051771e-02f, 7.374731824e-03f, 4.316361155e-04f, 6.874717542e-07f
+};
+
+/* core1_poly_in384000_out768000_pb20000_sb345600_u2_lp: taps=28, phase_len=14, stop_att=110.69 dB */
+const float core1_poly_in384000_out768000_pb20000_sb345600_u2_lp_even[] = {
+    9.102955119e-06f, 7.408894598e-04f, 6.457484327e-03f, 2.740904503e-02f,
+    7.381320000e-02f, 1.402073205e-01f, 1.976022720e-01f, 2.114171833e-01f,
+    1.724433899e-01f, 1.058441475e-01f, 4.720998183e-02f, 1.422996260e-02f,
+    2.467556391e-03f, 1.484645909e-04f
+};
+
+const float core1_poly_in384000_out768000_pb20000_sb345600_u2_lp_odd[] = {
+    1.484645909e-04f, 2.467556391e-03f, 1.422996260e-02f, 4.720998183e-02f,
+    1.058441475e-01f, 1.724433899e-01f, 2.114171833e-01f, 1.976022720e-01f,
+    1.402073205e-01f, 7.381320000e-02f, 2.740904503e-02f, 6.457484327e-03f,
+    7.408894598e-04f, 9.102955119e-06f
+};
+
 const FFT_FIR_PROFILE fft_fir_profile_in44100_out176400_pb20000_sb28000_u4_hp = {
     .fs_out_hz = 176400,
     .passband_hz = 20000,
@@ -29956,5 +30124,161 @@ const FFT_FIR_PROFILE fft_fir_profile_core1_in384000_out768000_pb20000_sb345600_
     .gain_ratio = 1.000000000e+00f,
     .h_head_fft = fft_fir_head_core1_in384000_out768000_pb20000_sb345600_u2_lp,
     .h_tail_fft = fft_fir_tail_core1_in384000_out768000_pb20000_sb345600_u2_lp,
+};
+
+const CORE1_POLY_PROFILE core1_poly_in88200_out176400_pb20000_sb79380_u2_hp = {
+    .fs_out_hz = 176400,
+    .passband_hz = 20000,
+    .stopband_hz = 79380,
+    .up_ratio = 2,
+    .taps = 30,
+    .phase_len = 15,
+    .dc_gain = 2.000000000e+00f,
+    .gain_ratio = 5.000000000e-01f,
+    .even_taps = core1_poly_in88200_out176400_pb20000_sb79380_u2_hp_even,
+    .odd_taps = core1_poly_in88200_out176400_pb20000_sb79380_u2_hp_odd,
+};
+
+const CORE1_POLY_PROFILE core1_poly_in88200_out176400_pb20000_sb79380_u2_lp = {
+    .fs_out_hz = 176400,
+    .passband_hz = 20000,
+    .stopband_hz = 79380,
+    .up_ratio = 2,
+    .taps = 24,
+    .phase_len = 12,
+    .dc_gain = 2.000000000e+00f,
+    .gain_ratio = 5.000000000e-01f,
+    .even_taps = core1_poly_in88200_out176400_pb20000_sb79380_u2_lp_even,
+    .odd_taps = core1_poly_in88200_out176400_pb20000_sb79380_u2_lp_odd,
+};
+
+const CORE1_POLY_PROFILE core1_poly_in96000_out192000_pb20000_sb86400_u2_hp = {
+    .fs_out_hz = 192000,
+    .passband_hz = 20000,
+    .stopband_hz = 86400,
+    .up_ratio = 2,
+    .taps = 28,
+    .phase_len = 14,
+    .dc_gain = 2.000000000e+00f,
+    .gain_ratio = 5.000000000e-01f,
+    .even_taps = core1_poly_in96000_out192000_pb20000_sb86400_u2_hp_even,
+    .odd_taps = core1_poly_in96000_out192000_pb20000_sb86400_u2_hp_odd,
+};
+
+const CORE1_POLY_PROFILE core1_poly_in96000_out192000_pb20000_sb86400_u2_lp = {
+    .fs_out_hz = 192000,
+    .passband_hz = 20000,
+    .stopband_hz = 86400,
+    .up_ratio = 2,
+    .taps = 22,
+    .phase_len = 11,
+    .dc_gain = 2.000000000e+00f,
+    .gain_ratio = 5.000000000e-01f,
+    .even_taps = core1_poly_in96000_out192000_pb20000_sb86400_u2_lp_even,
+    .odd_taps = core1_poly_in96000_out192000_pb20000_sb86400_u2_lp_odd,
+};
+
+const CORE1_POLY_PROFILE core1_poly_in176400_out352800_pb20000_sb158760_u2_hp = {
+    .fs_out_hz = 352800,
+    .passband_hz = 20000,
+    .stopband_hz = 158760,
+    .up_ratio = 2,
+    .taps = 26,
+    .phase_len = 13,
+    .dc_gain = 2.000000000e+00f,
+    .gain_ratio = 5.000000000e-01f,
+    .even_taps = core1_poly_in176400_out352800_pb20000_sb158760_u2_hp_even,
+    .odd_taps = core1_poly_in176400_out352800_pb20000_sb158760_u2_hp_odd,
+};
+
+const CORE1_POLY_PROFILE core1_poly_in176400_out352800_pb20000_sb158760_u2_lp = {
+    .fs_out_hz = 352800,
+    .passband_hz = 20000,
+    .stopband_hz = 158760,
+    .up_ratio = 2,
+    .taps = 20,
+    .phase_len = 10,
+    .dc_gain = 2.000000000e+00f,
+    .gain_ratio = 5.000000000e-01f,
+    .even_taps = core1_poly_in176400_out352800_pb20000_sb158760_u2_lp_even,
+    .odd_taps = core1_poly_in176400_out352800_pb20000_sb158760_u2_lp_odd,
+};
+
+const CORE1_POLY_PROFILE core1_poly_in192000_out384000_pb20000_sb172800_u2_hp = {
+    .fs_out_hz = 384000,
+    .passband_hz = 20000,
+    .stopband_hz = 172800,
+    .up_ratio = 2,
+    .taps = 26,
+    .phase_len = 13,
+    .dc_gain = 2.000000000e+00f,
+    .gain_ratio = 5.000000000e-01f,
+    .even_taps = core1_poly_in192000_out384000_pb20000_sb172800_u2_hp_even,
+    .odd_taps = core1_poly_in192000_out384000_pb20000_sb172800_u2_hp_odd,
+};
+
+const CORE1_POLY_PROFILE core1_poly_in192000_out384000_pb20000_sb172800_u2_lp = {
+    .fs_out_hz = 384000,
+    .passband_hz = 20000,
+    .stopband_hz = 172800,
+    .up_ratio = 2,
+    .taps = 20,
+    .phase_len = 10,
+    .dc_gain = 2.000000000e+00f,
+    .gain_ratio = 5.000000000e-01f,
+    .even_taps = core1_poly_in192000_out384000_pb20000_sb172800_u2_lp_even,
+    .odd_taps = core1_poly_in192000_out384000_pb20000_sb172800_u2_lp_odd,
+};
+
+const CORE1_POLY_PROFILE core1_poly_in352800_out705600_pb20000_sb317520_u2_hp = {
+    .fs_out_hz = 705600,
+    .passband_hz = 20000,
+    .stopband_hz = 317520,
+    .up_ratio = 2,
+    .taps = 24,
+    .phase_len = 12,
+    .dc_gain = 2.000000000e+00f,
+    .gain_ratio = 5.000000000e-01f,
+    .even_taps = core1_poly_in352800_out705600_pb20000_sb317520_u2_hp_even,
+    .odd_taps = core1_poly_in352800_out705600_pb20000_sb317520_u2_hp_odd,
+};
+
+const CORE1_POLY_PROFILE core1_poly_in352800_out705600_pb20000_sb317520_u2_lp = {
+    .fs_out_hz = 705600,
+    .passband_hz = 20000,
+    .stopband_hz = 317520,
+    .up_ratio = 2,
+    .taps = 26,
+    .phase_len = 13,
+    .dc_gain = 2.000000000e+00f,
+    .gain_ratio = 5.000000000e-01f,
+    .even_taps = core1_poly_in352800_out705600_pb20000_sb317520_u2_lp_even,
+    .odd_taps = core1_poly_in352800_out705600_pb20000_sb317520_u2_lp_odd,
+};
+
+const CORE1_POLY_PROFILE core1_poly_in384000_out768000_pb20000_sb345600_u2_hp = {
+    .fs_out_hz = 768000,
+    .passband_hz = 20000,
+    .stopband_hz = 345600,
+    .up_ratio = 2,
+    .taps = 24,
+    .phase_len = 12,
+    .dc_gain = 2.000000000e+00f,
+    .gain_ratio = 5.000000000e-01f,
+    .even_taps = core1_poly_in384000_out768000_pb20000_sb345600_u2_hp_even,
+    .odd_taps = core1_poly_in384000_out768000_pb20000_sb345600_u2_hp_odd,
+};
+
+const CORE1_POLY_PROFILE core1_poly_in384000_out768000_pb20000_sb345600_u2_lp = {
+    .fs_out_hz = 768000,
+    .passband_hz = 20000,
+    .stopband_hz = 345600,
+    .up_ratio = 2,
+    .taps = 28,
+    .phase_len = 14,
+    .dc_gain = 2.000000000e+00f,
+    .gain_ratio = 5.000000000e-01f,
+    .even_taps = core1_poly_in384000_out768000_pb20000_sb345600_u2_lp_even,
+    .odd_taps = core1_poly_in384000_out768000_pb20000_sb345600_u2_lp_odd,
 };
 

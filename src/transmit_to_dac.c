@@ -232,7 +232,16 @@ void __not_in_flash_func(dma_tx_start)(void)
 
     // 出力開始した時間を取得
     if(enable_output == true && enable_output_prev == false)
+    {
         time_start_output = get_absolute_time();
+#if CORE1_FIR_MODE == CORE1_FIR_MODE_HALF_BAND
+        if (get_ratio_upsampling_core1() == 2)
+            clear_core1_halfband_state();
+#elif CORE1_FIR_MODE == CORE1_FIR_MODE_POLYPHASE
+        if (get_ratio_upsampling_core1() == 2)
+            clear_core1_polyphase_state();
+#endif
+    }
     enable_output_prev = enable_output;
 
     if (enable_output)

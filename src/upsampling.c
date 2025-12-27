@@ -41,6 +41,16 @@ static float hb_state_core1_R_44_hi[FFT_FIR_HALF_BAND_EVEN_TAPS_44_HI];
 static float hb_state_core1_L_48_hi[FFT_FIR_HALF_BAND_EVEN_TAPS_48_HI];
 static float hb_state_core1_R_48_hi[FFT_FIR_HALF_BAND_EVEN_TAPS_48_HI];
 
+typedef struct
+{
+    uint32_t index;
+    float hist[CORE1_POLY_PHASE_LEN_MAX];
+} CORE1_POLY_STATE;
+
+static CORE1_POLY_STATE core1_poly_state_L;
+static CORE1_POLY_STATE core1_poly_state_R;
+static const CORE1_POLY_PROFILE *core1_poly_profile_active;
+
 static void __not_in_flash_func(halfband_interp2)(
     const float *input,
     float *output,
@@ -146,8 +156,48 @@ extern void clear_bq_filter_delay(void)
         hb_state_R_48[i] = 0;
     }
     clear_core1_halfband_state();
+    clear_core1_polyphase_state();
     fft_fir_core0_reset();
     fft_fir_core1_reset();
+}
+
+static void __not_in_flash_func(polyphase_interp2)(
+    const CORE1_POLY_PROFILE *profile,
+    const float *input,
+    float *output,
+    uint32_t length,
+    CORE1_POLY_STATE *state)
+{
+    uint32_t phase_len = profile->phase_len;
+    const float *even = profile->even_taps;
+    const float *odd = profile->odd_taps;
+    uint32_t idx = state->index;
+
+    for (uint32_t n = 0; n < length; n++)
+    {
+        idx++;
+        if (idx >= phase_len)
+            idx = 0;
+        state->hist[idx] = input[n];
+
+        float acc_even = 0.0f;
+        float acc_odd = 0.0f;
+        uint32_t h = idx;
+        for (uint32_t k = 0; k < phase_len; k++)
+        {
+            float sample = state->hist[h];
+            acc_even += even[k] * sample;
+            acc_odd += odd[k] * sample;
+            if (h == 0)
+                h = phase_len - 1;
+            else
+                h--;
+        }
+
+        output[(n * 2u)] = acc_even;
+        output[(n * 2u) + 1u] = acc_odd;
+    }
+    state->index = idx;
 }
 
 extern void clear_core1_halfband_state(void)
@@ -164,6 +214,13 @@ extern void clear_core1_halfband_state(void)
     }
 }
 
+extern void clear_core1_polyphase_state(void)
+{
+    memset(&core1_poly_state_L, 0, sizeof(core1_poly_state_L));
+    memset(&core1_poly_state_R, 0, sizeof(core1_poly_state_R));
+    core1_poly_profile_active = NULL;
+}
+
 uint32_t upsampling_core1_get_block_len(void)
 {
     uint16_t ratio = get_ratio_upsampling_core1();
@@ -173,7 +230,10 @@ uint32_t upsampling_core1_get_block_len(void)
         return 0;
 
     uint32_t freq_in = audio_state.freq * get_ratio_upsampling_core0(audio_state.freq);
-#if CORE1_FIR_MODE == CORE1_FIR_MODE_HALF_BAND
+#if CORE1_FIR_MODE == CORE1_FIR_MODE_POLYPHASE
+    if (ratio == 2)
+        return 0;
+#elif CORE1_FIR_MODE == CORE1_FIR_MODE_HALF_BAND
     if (ratio == 2 && freq_in >= 352800)
         return 0;
 #endif
@@ -354,7 +414,6 @@ single_stage:
 uint32_t __not_in_flash_func(upsampling_process_core1)(float *in_L, float *in_R, float *out_L, float *out_R, uint32_t length)
 {
     uint16_t ratio = get_ratio_upsampling_core1();
-    bool is_44k1_family = (audio_state.freq == 44100 || audio_state.freq == 88200 || audio_state.freq == 176400);
     if (ratio <= 1)
     {
         memcpy(out_L, in_L, sizeof(float) * length);
@@ -365,7 +424,53 @@ uint32_t __not_in_flash_func(upsampling_process_core1)(float *in_L, float *in_R,
         goto fallback_iir;
 
     uint32_t freq_in = audio_state.freq * get_ratio_upsampling_core0(audio_state.freq);
-#if CORE1_FIR_MODE == CORE1_FIR_MODE_HALF_BAND
+#if CORE1_FIR_MODE == CORE1_FIR_MODE_POLYPHASE
+    if (ratio == 2)
+    {
+        const CORE1_POLY_PROFILE *profile = NULL;
+        switch (freq_in)
+        {
+        case 88200:
+            profile = is_high_power_mode ? &core1_poly_in88200_out176400_pb20000_sb79380_u2_hp
+                                         : &core1_poly_in88200_out176400_pb20000_sb79380_u2_lp;
+            break;
+        case 96000:
+            profile = is_high_power_mode ? &core1_poly_in96000_out192000_pb20000_sb86400_u2_hp
+                                         : &core1_poly_in96000_out192000_pb20000_sb86400_u2_lp;
+            break;
+        case 176400:
+            profile = is_high_power_mode ? &core1_poly_in176400_out352800_pb20000_sb158760_u2_hp
+                                         : &core1_poly_in176400_out352800_pb20000_sb158760_u2_lp;
+            break;
+        case 192000:
+            profile = is_high_power_mode ? &core1_poly_in192000_out384000_pb20000_sb172800_u2_hp
+                                         : &core1_poly_in192000_out384000_pb20000_sb172800_u2_lp;
+            break;
+        case 352800:
+            profile = is_high_power_mode ? &core1_poly_in352800_out705600_pb20000_sb317520_u2_hp
+                                         : &core1_poly_in352800_out705600_pb20000_sb317520_u2_lp;
+            break;
+        case 384000:
+            profile = is_high_power_mode ? &core1_poly_in384000_out768000_pb20000_sb345600_u2_hp
+                                         : &core1_poly_in384000_out768000_pb20000_sb345600_u2_lp;
+            break;
+        default:
+            break;
+        }
+        if (profile != NULL)
+        {
+            if (core1_poly_profile_active != profile)
+            {
+                clear_core1_polyphase_state();
+                core1_poly_profile_active = profile;
+            }
+            polyphase_interp2(profile, in_L, out_L, length, &core1_poly_state_L);
+            polyphase_interp2(profile, in_R, out_R, length, &core1_poly_state_R);
+            return length * 2u;
+        }
+    }
+#elif CORE1_FIR_MODE == CORE1_FIR_MODE_HALF_BAND
+    bool is_44k1_family = (audio_state.freq == 44100 || audio_state.freq == 88200 || audio_state.freq == 176400);
     if (ratio == 2 && freq_in >= 352800)
     {
         const float *hb_even = is_44k1_family ? fft_fir_halfband_even_44_hi : fft_fir_halfband_even_48_hi;

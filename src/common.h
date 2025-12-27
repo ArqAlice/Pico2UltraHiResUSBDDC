@@ -16,7 +16,8 @@
 #include "ess_specific.h"
 
 #define CORE1_FIR_MODE_HALF_BAND (0)
-#define CORE1_FIR_MODE_FFT (1)
+#define CORE1_FIR_MODE_POLYPHASE (1)
+#define CORE1_FIR_MODE_FFT (2)
 
 // User Configurable ------------------------------------------------------------------
 
@@ -108,7 +109,7 @@
 #define LINEAR
 
 // Core1 FIR Filter Mode
-#define CORE1_FIR_MODE (CORE1_FIR_MODE_HALF_BAND)
+#define CORE1_FIR_MODE (CORE1_FIR_MODE_POLYPHASE)
 
 // DCDC Control
 #define DCDC_MODE_PIN (23)
