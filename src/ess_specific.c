@@ -153,8 +153,9 @@ void ess_dac_i2c_setup(void)
 		sleep_ms(1);
 
 		// DPLLバンド幅設定
+		uint8_t bandwidth = ((uint8_t)ESS_DPLL_BANDWIDTH);
 		i2cbuf[0] = 0x1D; // Resister 29: DPLL_BW
-		i2cbuf[1] = 0x30;
+		i2cbuf[1] = bandwidth;
 		i2c_write_blocking(I2C_PORT, I2C_ESS_DAC_ADDR >>1, i2cbuf, 2, true);
 		sleep_ms(1);
 	}
@@ -194,7 +195,11 @@ void ess_dac_volume(void)
 		}
 		else if(KIND_ESS_DAC == ES9039Q2M)
 		{
-			// TODO:作る
+			float vol_dB_2 = -saturation_f32((float)audio_state.acq_volume / 128.0, 0.0, -256.0);
+			i2cbuf[0] = 0x4A; // Resister #74 volume ch1
+			i2cbuf[1] = (uint8_t)vol_dB_2;
+			i2cbuf[2] = 0x4B; // Resister #75 volume ch2
+			i2cbuf[3] = (uint8_t)vol_dB_2;
 		}
 		i2c_ringbuf_write_array(i2cbuf, 4, &i2c_ringbuffer0);
 	}
