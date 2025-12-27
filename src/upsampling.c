@@ -145,6 +145,13 @@ extern void clear_bq_filter_delay(void)
         hb_state_L_48[i] = 0;
         hb_state_R_48[i] = 0;
     }
+    clear_core1_halfband_state();
+    fft_fir_core0_reset();
+    fft_fir_core1_reset();
+}
+
+extern void clear_core1_halfband_state(void)
+{
     for (uint16_t i = 0; i < FFT_FIR_HALF_BAND_EVEN_TAPS_44_HI; i++)
     {
         hb_state_core1_L_44_hi[i] = 0;
@@ -155,8 +162,6 @@ extern void clear_bq_filter_delay(void)
         hb_state_core1_L_48_hi[i] = 0;
         hb_state_core1_R_48_hi[i] = 0;
     }
-    fft_fir_core0_reset();
-    fft_fir_core1_reset();
 }
 
 uint32_t upsampling_core1_get_block_len(void)
