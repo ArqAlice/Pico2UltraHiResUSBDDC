@@ -11,6 +11,7 @@
 #include <arm_math.h>
 #include "common.h"
 #include "upsampling.h"
+#include "fft_fir_core0.h"
 
 // todo make descriptor strings should probably belong to the configs
 static char *descriptor_strings[] =
@@ -740,77 +741,60 @@ static void _as_audio_packet(struct usb_endpoint *ep)
 	// ※uint8データ長をint16データ長(1/2)に変換
 	uint length = (usb_buffer->data_len) >> 1;
 
-	float ep_Lch[SIZE_EP_BUFFER];
-	float ep_Rch[SIZE_EP_BUFFER];
+	static float ep_Lch[SIZE_EP_BUFFER];
+	static float ep_Rch[SIZE_EP_BUFFER];
+	static uint32_t last_freq = 0;
+	static uint16_t last_ratio = 0;
+	static uint16_t last_ratio_core1 = 0;
+	static bool last_power = false;
+	static float fft_gain_ratio = 1.0f;
 
 	// usb epデータコピー
 	length = usb_ep_data_acquire(audio_state.bit_depth, ep_in, length, ep_Lch, ep_Rch);
 
 	now_playing++; // この処理が来ているかどうかを確認するための変数
-	
-	float volume = audio_state.vol_float;
-	
-	switch(audio_state.freq)
+
+	bool power_mode = is_high_power_mode;
+	uint16_t ratio = get_ratio_upsampling_core0(audio_state.freq);
+	uint16_t ratio_core1 = get_ratio_upsampling_core1();
+	if (audio_state.freq != last_freq || ratio != last_ratio || ratio_core1 != last_ratio_core1 || power_mode != last_power)
 	{
-		case 192000:
-		case 176400:
-			if (!CORE0_UPSAMPLING_192K)
-			{
-				arm_scale_f32(ep_Lch, volume * DEFAULT_GAIN_RATIO * 2., ep_Lch, length);
-				arm_scale_f32(ep_Rch, volume * DEFAULT_GAIN_RATIO * 2., ep_Rch, length);
-			}
+		float gain_core0 = 1.0f;
+		if (ratio == 8 && !power_mode)
+		{
+			const FFT_FIR_PROFILE *profile_stage1 = fft_fir_core0_select_profile(audio_state.freq, 4, power_mode);
+			if (profile_stage1)
+				gain_core0 = profile_stage1->gain_ratio;
 			else
 			{
-				arm_scale_f32(ep_Lch, volume * DEFAULT_GAIN_RATIO, ep_Lch, length);
-				arm_scale_f32(ep_Rch, volume * DEFAULT_GAIN_RATIO, ep_Rch, length);
+				const FFT_FIR_PROFILE *profile = fft_fir_core0_select_profile(audio_state.freq, ratio, power_mode);
+				gain_core0 = profile ? profile->gain_ratio : 1.0f;
 			}
-			break;
+		}
+		else
+		{
+			const FFT_FIR_PROFILE *profile = fft_fir_core0_select_profile(audio_state.freq, ratio, power_mode);
+			gain_core0 = profile ? profile->gain_ratio : 1.0f;
+		}
 
-		case 96000:
-		case 88200:
-			if (!CORE0_UPSAMPLING_192K)
-			{
-				if (is_high_power_mode)
-				{
-					arm_scale_f32(ep_Lch, volume * DEFAULT_GAIN_RATIO * 4., ep_Lch, length);
-					arm_scale_f32(ep_Rch, volume * DEFAULT_GAIN_RATIO * 4., ep_Rch, length);
-				}
-				else
-				{
-					arm_scale_f32(ep_Lch, volume * DEFAULT_GAIN_RATIO * 2., ep_Lch, length);
-					arm_scale_f32(ep_Rch, volume * DEFAULT_GAIN_RATIO * 2., ep_Rch, length);
-				}
-			}
-			else
-			{
-				arm_scale_f32(ep_Lch, volume * DEFAULT_GAIN_RATIO * 2., ep_Lch, length);
-				arm_scale_f32(ep_Rch, volume * DEFAULT_GAIN_RATIO * 2., ep_Rch, length);
-			}
-			break;
-
-		case 48000:
-		case 44100:
-		default:
-			if (!CORE0_UPSAMPLING_192K)
-			{
-				if (is_high_power_mode)
-				{
-					arm_scale_f32(ep_Lch, volume * DEFAULT_GAIN_RATIO * 8., ep_Lch, length);
-					arm_scale_f32(ep_Rch, volume * DEFAULT_GAIN_RATIO * 8., ep_Rch, length);
-				}
-				else
-				{
-					arm_scale_f32(ep_Lch, volume * DEFAULT_GAIN_RATIO * 4., ep_Lch, length);
-					arm_scale_f32(ep_Rch, volume * DEFAULT_GAIN_RATIO * 4., ep_Rch, length);
-				}
-			}
-			else
-			{
-				arm_scale_f32(ep_Lch, volume * DEFAULT_GAIN_RATIO * 4., ep_Lch, length);
-				arm_scale_f32(ep_Rch, volume * DEFAULT_GAIN_RATIO * 4., ep_Rch, length);
-			}
-			break;
+		float gain_core1 = 1.0f;
+		if (ratio_core1 > 1)
+		{
+			uint32_t freq_in = audio_state.freq * get_ratio_upsampling_core0(audio_state.freq);
+			const FFT_FIR_PROFILE *profile = fft_fir_core0_select_profile(freq_in, ratio_core1, power_mode);
+			gain_core1 = profile ? profile->gain_ratio : 1.0f;
+		}
+		fft_gain_ratio = gain_core0 * gain_core1;
+		last_freq = audio_state.freq;
+		last_ratio = ratio;
+		last_ratio_core1 = ratio_core1;
+		last_power = power_mode;
 	}
+
+	float volume = audio_state.vol_float;
+	float scale = volume * DEFAULT_GAIN_RATIO * fft_gain_ratio;
+	arm_scale_f32(ep_Lch, scale, ep_Lch, length);
+	arm_scale_f32(ep_Rch, scale, ep_Rch, length);
 
 	ringbuf_write_array_no_spinlock((int32_t*)ep_Lch, length, &buffer_ep_Lch);
 	ringbuf_write_array_no_spinlock((int32_t*)ep_Rch, length, &buffer_ep_Rch);

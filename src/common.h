@@ -15,6 +15,10 @@
 #include "ringbuffer.h"
 #include "ess_specific.h"
 
+#define CORE1_FIR_MODE_HALF_BAND (0)
+#define CORE1_FIR_MODE_POLYPHASE (1)
+#define CORE1_FIR_MODE_FFT (2)
+
 // User Configurable ------------------------------------------------------------------
 
 // Test mode
@@ -27,9 +31,6 @@
 #define DEVICE_NAME ("Pico2 UltraHiRes USB-DDC")
 #define WEBSITE_ADDR ("y.tomi0131@gmail.com:")
 
-// FIR Filter Type: LINEAR or MINIMUM
-#define LINEAR
-
 // Faster I2S slew rate
 #define I2S_SLEWRATE_FAST_ENABLE (true)
 
@@ -39,8 +40,8 @@
 // Power Mode Switch Pin
 // The Hi-Power Mode, Core0 uses 384KHz FIR Filter
 #define POWER_MODE_SWITCH_PIN (0)
-#define ALWAYS_HIGH_POWER (false)
-#define ALWAYS_LOW_POWER (true)
+#define ALWAYS_HIGH_POWER (true)
+#define ALWAYS_LOW_POWER (false)
 
 // I2C
 #define I2C_PORT (i2c1)
@@ -53,10 +54,13 @@
 #define I2S_SIDESET_BASE (27)
 
 // Upsampler control
-#define BYPASS_CORE1_UPSAMPLING (true)
-#define CORE0_UPSAMPLING_192K (true)
-#define ENABLE_1536KHZ_OUTPUT (false)
-#define DEFAULT_GAIN_RATIO (0.72) // Adjust this according to your filter to avoid clipping.
+// Core0 ratio is for 48k family; 96k uses /2, 192k uses /4 (min 1).
+#define CORE0_UP_RATIO_HP (8)
+#define CORE0_UP_RATIO_LP (4)
+// Core1 ratio is applied directly (1/2/4 are supported).
+#define CORE1_UP_RATIO_HP (2)
+#define CORE1_UP_RATIO_LP (1)
+#define DEFAULT_GAIN_RATIO (0.75) // Adjust this according to your filter to avoid clipping.
 
 // ESS DAC Specific
 #define USE_ESS_DAC (true)
@@ -67,7 +71,7 @@
 #define ENABLE_ESS_DAC_THD_COMPEN (false)
 #define ESS_THD_COMPEN_C2 (0) // 16bit signed int
 #define ESS_THD_COMPEN_C3 (0) // 16bit signed int
-#define ESS_DPLL_BANDWIDTH (0x80) // 0~255, 0 is DPLL off
+#define ESS_DPLL_BANDWIDTH (0xC0) // 0~255, 0 is DPLL off
 #define ESS_DPLL_LOCKSPEED (2)   // 0~16
 #define TIME_ES9038Q2M_DEPOP_USEC (40000)
 #define DAC_ENABLE_PIN (5)
@@ -80,27 +84,32 @@
 // User Configurable end ------------------------------------------------------------
 
 // システムクロック
+//#define SYS_CLOCK_KHZ_44K (412000)
+//#define SYS_CLOCK_KHZ_48K (430000)
 #define SYS_CLOCK_KHZ_44K (282000)
 #define SYS_CLOCK_KHZ_48K (307200)
 #define SYS_CLOCK_KHZ_LP_44K (208000)
 #define SYS_CLOCK_KHZ_LP_48K (208000)
-// #define SYS_CLOCK_KHZ 208800 //  208M8/48k/64 = 67.968->68, 208M8/44k1/64 = 73.979->74
-// #define SYS_CLOCK_KHZ 150000
+// 208M8/48k/64 = 67.968->68, 208M8/44k1/64 = 73.979->74
 
 // Core Voltage
+//#define V_CORE_HI VREG_VOLTAGE_1_50
 #define V_CORE_HI VREG_VOLTAGE_1_25
 #define V_CORE_LO VREG_VOLTAGE_1_05
+
 
 // 初期オーディオサンプル周波数
 #define AUDIO_INITIAL_FREQ (44100)
 
 // アップサンプリング倍率(Core0)
-#define RATIO_UPSAMPLING_48K (8)
-#define RATIO_UPSAMPLING_96K (RATIO_UPSAMPLING_48K / 2)
-#define RATIO_UPSAMPLING_192K (RATIO_UPSAMPLING_48K / 4)
+#define CORE0_UP_RATIO_MAX ((CORE0_UP_RATIO_HP) > (CORE0_UP_RATIO_LP) ? (CORE0_UP_RATIO_HP) : (CORE0_UP_RATIO_LP))
+#define CORE1_UP_RATIO_MAX ((CORE1_UP_RATIO_HP) > (CORE1_UP_RATIO_LP) ? (CORE1_UP_RATIO_HP) : (CORE1_UP_RATIO_LP))
 
-// アップサンプリング倍率(Core1)
-#define RATIO_UPSAMPLING_CORE1 (4)
+// FIR Filter Type: LINEAR or MINIMUM (Unavailable)
+#define LINEAR
+
+// Core1 FIR Filter Mode
+#define CORE1_FIR_MODE (CORE1_FIR_MODE_POLYPHASE)
 
 // DCDC Control
 #define DCDC_MODE_PIN (23)
@@ -112,12 +121,14 @@
 #define TIMER0_US (250)
 
 #define TIMER_US_CORE1 (250)
+// Core1 DMA/processing chunk size (us). Larger values give more upsampling time.
+#define CORE1_PROCESS_US (5000)
 
 // エンドポイントバッファサイズ((96+1)kHz*1ms=97以上あればよい)
-#define SIZE_EP_BUFFER (256)
+#define SIZE_EP_BUFFER (512)
 
-// アップサンプリングバッファサイズ(10ms分程度ほしい (96+1)kHz*10ms*4upsampling=3880 FB水位を50%確保したいのでこれの2倍用意する)
-#define SIZE_UPSAMPLE_CORE0 (8192)
+// アップサンプリングバッファサイズ
+#define SIZE_UPSAMPLE_CORE0 (8192) // Core0 Upsampling Buffer Size (samples per channel)
 
 // DMA転送バッファサイズ 3以上あればよい
 #define DEPTH_DMA_TX_BUFFER (3)
@@ -222,45 +233,36 @@ inline uint16_t ratio_to_bitshift(uint16_t ratio)
 // アップサンプリング倍率取得関数(Core0)
 inline uint16_t get_ratio_upsampling_core0(uint32_t freq)
 {
+	uint16_t base = is_high_power_mode ? CORE0_UP_RATIO_HP : CORE0_UP_RATIO_LP;
 	uint16_t ratio;
 	switch (freq)
 	{
 	case 192000:
 	case 176400:
-		ratio = RATIO_UPSAMPLING_192K;
+		ratio = base >> 2;
 		break;
 	case 96000:
 	case 88200:
-		ratio = RATIO_UPSAMPLING_96K;
+		ratio = base >> 1;
 		break;
 	case 48000:
 	case 44100:
 	default:
-		ratio = RATIO_UPSAMPLING_48K;
+		ratio = base;
 		break;
 	}
 
-	if (!CORE0_UPSAMPLING_192K)
-		return ratio;
-	else
-		return ratio >> 1;
+	if (ratio == 0)
+		return 1;
+	return ratio;
 }
 
-// アップサンプリング倍率取得関数(Core1)
 inline uint16_t get_ratio_upsampling_core1(void)
 {
-	if (ENABLE_1536KHZ_OUTPUT && is_high_power_mode && (!BYPASS_CORE1_UPSAMPLING) && (!CORE0_UPSAMPLING_192K))
-	{
-		return RATIO_UPSAMPLING_CORE1;
-	}
-	else if ((!BYPASS_CORE1_UPSAMPLING) && (!CORE0_UPSAMPLING_192K))
-	{
-		return RATIO_UPSAMPLING_CORE1 >> 1;
-	}
-	else // bypass Core1 upsampling
-	{
+	uint16_t ratio = is_high_power_mode ? CORE1_UP_RATIO_HP : CORE1_UP_RATIO_LP;
+	if (ratio == 0)
 		return 1;
-	}
+	return ratio;
 }
 
 #endif

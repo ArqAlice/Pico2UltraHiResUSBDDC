@@ -102,7 +102,7 @@ bool __not_in_flash_func(core0_timer_callback)(struct repeating_timer *t)
 	if (count >= MILLISEC50)
 	{
 		// パワーモード切り替え
-		if ((gpio_get(POWER_MODE_SWITCH_PIN) || ALWAYS_HIGH_POWER) && (!ALWAYS_LOW_POWER) && (!CORE0_UPSAMPLING_192K))
+		if ((gpio_get(POWER_MODE_SWITCH_PIN) || ALWAYS_HIGH_POWER) && (!ALWAYS_LOW_POWER))
 		{
 			// HiPowerMode
 			if (!is_high_power_mode)
@@ -275,7 +275,7 @@ int main(void)
 		{
 			int64_t elapsed_us = absolute_time_diff_us(time_start_i2c_transfer, get_absolute_time());
 
-			if ((!i2c_dma_is_busy()) && (elapsed_us >= 5000))
+			if ((!i2c_dma_is_busy()) && (elapsed_us >= 1000))
 			{
 				uint16_t size = i2c_ringbuf_get_size_using(&i2c_ringbuffer0);
 				if (size >= SIZE_I2C_TRANSFER_UNIT)
