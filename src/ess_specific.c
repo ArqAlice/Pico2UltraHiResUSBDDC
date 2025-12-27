@@ -120,22 +120,29 @@ void ess_dac_i2c_setup(void)
 
 	else if(KIND_ESS_DAC == ES9039Q2M)
 	{
-		if(output_fs >= 700000)
-		{
-			// 768kHz入力を有効化し、DACを有効化する
-			i2cbuf[0] = 0x00; // Resister 0: SYSTEM_CONFIG
-			i2cbuf[1] = 0x42; // Enable 64fs mode, enable DAC
-			i2c_write_blocking(I2C_PORT, I2C_ESS_DAC_ADDR >>1, i2cbuf, 2, true);
-			sleep_ms(1);
-		}
-		else
-		{
-			// DACを有効化する
-			i2cbuf[0] = 0x00; // Resister 0: SYSTEM_CONFIG
-			i2cbuf[1] = 0x02; // enable DAC
-			i2c_write_blocking(I2C_PORT, I2C_ESS_DAC_ADDR >>1, i2cbuf, 2, true);
-			sleep_ms(1);
-		}
+		// CLK GEAR SELECT
+		i2cbuf[0] = 0x05; // Resister 5: CLK GEAR SELECT
+		i2cbuf[1] = 0x00; // SYS_CLK=MCLK, AUTO_CLK_GEAR disabled
+		i2c_write_blocking(I2C_PORT, I2C_ESS_DAC_ADDR >>1, i2cbuf, 2, true);
+		sleep_ms(1);
+		
+		// 768kHz入力を有効化し、DACを有効化する
+		i2cbuf[0] = 0x00; // Resister 0: SYSTEM_CONFIG
+		i2cbuf[1] = 0x42; // Enable 64fs mode, enable DAC
+		i2c_write_blocking(I2C_PORT, I2C_ESS_DAC_ADDR >>1, i2cbuf, 2, true);
+		sleep_ms(1);
+
+		// SYS MODE CONFIG
+		i2cbuf[0] = 0x01; // Resister 1: SYS_MODE_CONFIG
+		i2cbuf[1] = 0xB1; // enable DAC_CLK, disable Sync Mode, enable TDM decode
+		i2c_write_blocking(I2C_PORT, I2C_ESS_DAC_ADDR >>1, i2cbuf, 2, true);
+		sleep_ms(1);
+
+		// DAC CLOCK CONFIG
+		i2cbuf[0] = 0x03; // Resister 3: DAC_CLOCK_CONFIG
+		i2cbuf[1] = 0x00; // disable AutoFS Detect
+		i2c_write_blocking(I2C_PORT, I2C_ESS_DAC_ADDR >>1, i2cbuf, 2, true);
+		sleep_ms(1);
 
 		if(external_upsampling)
 		{
@@ -145,12 +152,6 @@ void ess_dac_i2c_setup(void)
 			i2c_write_blocking(I2C_PORT, I2C_ESS_DAC_ADDR >>1, i2cbuf, 2, true);
 			sleep_ms(1);
 		}
-
-		// DAC interpolation path clock diable
-		i2cbuf[0] = 0x01; // Resister 1: SYS_MODE_CONFIG
-		i2cbuf[1] = 0xC1; // enable DAC_CLK, enable SYNC Mode, enable TDM decode
-		i2c_write_blocking(I2C_PORT, I2C_ESS_DAC_ADDR >>1, i2cbuf, 2, true);
-		sleep_ms(1);
 
 		// DPLLバンド幅設定
 		uint8_t bandwidth = ((uint8_t)ESS_DPLL_BANDWIDTH);
