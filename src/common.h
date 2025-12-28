@@ -71,8 +71,8 @@
 #define ENABLE_ESS_DAC_THD_COMPEN (false)
 #define ESS_THD_COMPEN_C2 (0) // 16bit signed int
 #define ESS_THD_COMPEN_C3 (0) // 16bit signed int
-#define ESS_DPLL_BANDWIDTH (0xC0) // 0~255, 0 is DPLL off
-#define ESS_DPLL_LOCKSPEED (2)   // 0~16
+#define ESS_DPLL_BANDWIDTH (0xA0) // 0~255, 0 is DPLL off
+#define ESS_DPLL_LOCKSPEED (16)   // 0~16
 #define TIME_ES9038Q2M_DEPOP_USEC (40000)
 #define DAC_ENABLE_PIN (5)
 
@@ -122,7 +122,7 @@
 
 #define TIMER_US_CORE1 (250)
 // Core1 DMA/processing chunk size (us). Larger values give more upsampling time.
-#define CORE1_PROCESS_US (5000)
+#define CORE1_PROCESS_US (2000)
 
 // エンドポイントバッファサイズ((96+1)kHz*1ms=97以上あればよい)
 #define SIZE_EP_BUFFER (512)

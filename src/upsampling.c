@@ -230,6 +230,9 @@ uint32_t upsampling_core1_get_block_len(void)
         return 0;
 
     uint32_t freq_in = audio_state.freq * get_ratio_upsampling_core0(audio_state.freq);
+    uint32_t freq_out = freq_in * ratio;
+    if (freq_out == 1536000u)
+        return 0;
 #if CORE1_FIR_MODE == CORE1_FIR_MODE_POLYPHASE
     if (ratio == 2)
         return 0;
