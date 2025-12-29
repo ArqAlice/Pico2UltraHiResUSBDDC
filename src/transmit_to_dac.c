@@ -234,6 +234,11 @@ void __not_in_flash_func(dma_tx_start)(void)
     if(enable_output == true && enable_output_prev == false)
     {
         time_start_output = get_absolute_time();
+        // Resync I2S frame phase on playback start to prevent L/R swap.
+        pio_sm_set_enabled(pio, sm, false);
+        pio_sm_clear_fifos(pio, sm);
+        pio_sm_restart(pio, sm);
+        reset_i2s_freq();
     }
     enable_output_prev = enable_output;
 
