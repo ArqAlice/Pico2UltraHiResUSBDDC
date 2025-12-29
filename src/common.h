@@ -55,10 +55,10 @@
 
 // Upsampler control
 // Core0 ratio is for 48k family; 96k uses /2, 192k uses /4 (min 1).
-#define CORE0_UP_RATIO_HP (8)
+#define CORE0_UP_RATIO_HP (4)
 #define CORE0_UP_RATIO_LP (4)
 // Core1 ratio is applied directly (1/2/4 are supported).
-#define CORE1_UP_RATIO_HP (2)
+#define CORE1_UP_RATIO_HP (1)
 #define CORE1_UP_RATIO_LP (1)
 #define DEFAULT_GAIN_RATIO (0.75) // Adjust this according to your filter to avoid clipping.
 
@@ -69,8 +69,8 @@
 #define ENABLE_ES9038Q2M_DEPOP (true)
 #define ENABLE_ESS_DAC_VOLUME (true)
 #define ENABLE_ESS_DAC_THD_COMPEN (true)
-#define ESS_THD_COMPEN_C2 (3) // 16bit signed int
-#define ESS_THD_COMPEN_C3 (-99) // 16bit signed int
+#define ESS_THD_COMPEN_C2 (0) // 16bit signed int
+#define ESS_THD_COMPEN_C3 (-48) // 16bit signed int
 #define ESS_DPLL_BANDWIDTH (0x80) // 0~255, 0 is DPLL off
 #define ESS_DPLL_LOCKSPEED (8)   // 0~16
 #define TIME_ES9038Q2M_DEPOP_USEC (40000)
