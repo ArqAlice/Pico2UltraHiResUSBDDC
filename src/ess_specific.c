@@ -153,6 +153,48 @@ void ess_dac_i2c_setup(void)
 			sleep_ms(1);
 		}
 
+				// THD compensation
+		if (ENABLE_ESS_DAC_THD_COMPEN)
+		{
+			i2cbuf[0] = 0x5B; // Resister #22 THD Compensation C2 CH1
+			i2cbuf[1] = (uint8_t)(ESS_THD_COMPEN_C2 & 0xFF);
+			i2c_write_blocking(I2C_PORT, I2C_ESS_DAC_ADDR >>1, i2cbuf, 2, true);
+			i2cbuf[0] = 0x5C; // Resister #23 THD Compensation C2 CH1
+			i2cbuf[1] = (uint8_t)((ESS_THD_COMPEN_C2 & 0xFF00) >> 8);
+			i2c_write_blocking(I2C_PORT, I2C_ESS_DAC_ADDR >>1, i2cbuf, 2, true);
+			sleep_ms(1);
+
+			i2cbuf[0] = 0x5D; // Resister #22 THD Compensation C2 CH2
+			i2cbuf[1] = (uint8_t)(ESS_THD_COMPEN_C2 & 0xFF);
+			i2c_write_blocking(I2C_PORT, I2C_ESS_DAC_ADDR >>1, i2cbuf, 2, true);
+			i2cbuf[0] = 0x5E; // Resister #23 THD Compensation C2 CH2
+			i2cbuf[1] = (uint8_t)((ESS_THD_COMPEN_C2 & 0xFF00) >> 8);
+			i2c_write_blocking(I2C_PORT, I2C_ESS_DAC_ADDR >>1, i2cbuf, 2, true);
+			sleep_ms(1);
+
+			i2cbuf[0] = 0x6B; // Resister #24 THD Compensation C3 CH1
+			i2cbuf[1] = (uint8_t)(ESS_THD_COMPEN_C3 & 0xFF);
+			i2c_write_blocking(I2C_PORT, I2C_ESS_DAC_ADDR >>1, i2cbuf, 2, true);
+			i2cbuf[0] = 0x6C; // Resister #25 THD Compensation C3
+			i2cbuf[1] = (uint8_t)((ESS_THD_COMPEN_C3 & 0xFF00) >> 8);
+			i2c_write_blocking(I2C_PORT, I2C_ESS_DAC_ADDR >>1, i2cbuf, 2, true);
+			sleep_ms(1);
+
+			i2cbuf[0] = 0x6D; // Resister #24 THD Compensation C3 CH2
+			i2cbuf[1] = (uint8_t)(ESS_THD_COMPEN_C3 & 0xFF);
+			i2c_write_blocking(I2C_PORT, I2C_ESS_DAC_ADDR >>1, i2cbuf, 2, true);
+			i2cbuf[0] = 0x6E; // Resister #25 THD Compensation C3 CH2
+			i2cbuf[1] = (uint8_t)((ESS_THD_COMPEN_C3 & 0xFF00) >> 8);
+			i2c_write_blocking(I2C_PORT, I2C_ESS_DAC_ADDR >>1, i2cbuf, 2, true);
+			sleep_ms(1);
+		}
+		else
+		{
+			i2cbuf[0] = 0x0D; // Resister #13 THD Bypass
+			i2cbuf[1] = 0x40; // THD compensation disable
+			i2c_write_blocking(I2C_PORT, I2C_ESS_DAC_ADDR >>1, i2cbuf, 2, true);
+		}
+
 		// DPLLバンド幅設定
 		uint8_t bandwidth = ((uint8_t)ESS_DPLL_BANDWIDTH);
 		i2cbuf[0] = 0x1D; // Resister 29: DPLL_BW
