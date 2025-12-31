@@ -6,8 +6,19 @@ file(GLOB DSP_SRC
         ${CMAKE_CURRENT_SOURCE_DIR}/../CMSIS/DSP/Source/FilteringFunctions/arm_fir_interpolate_init_f32.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../CMSIS/DSP/Source/FilteringFunctions/arm_biquad_cascade_df1_f32.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../CMSIS/DSP/Source/FilteringFunctions/arm_biquad_cascade_df1_init_f32.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/../CMSIS/DSP/Source/TransformFunctions/arm_cfft_f32.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/../CMSIS/DSP/Source/TransformFunctions/arm_cfft_init_f32.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/../CMSIS/DSP/Source/TransformFunctions/arm_cfft_radix8_f32.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/../CMSIS/DSP/Source/TransformFunctions/arm_rfft_fast_f32.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/../CMSIS/DSP/Source/TransformFunctions/arm_rfft_fast_init_f32.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/../CMSIS/DSP/Source/TransformFunctions/arm_bitreversal.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/../CMSIS/DSP/Source/TransformFunctions/arm_bitreversal2.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/../CMSIS/DSP/Source/CommonTables/arm_common_tables.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/../CMSIS/DSP/Source/CommonTables/arm_const_structs.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../CMSIS/DSP/Source/SupportFunctions/arm_q31_to_float.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/../CMSIS/DSP/Source/BasicMathFunctions/arm_add_f32.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../CMSIS/DSP/Source/BasicMathFunctions/arm_scale_f32.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/../CMSIS/DSP/Source/ComplexMathFunctions/arm_cmplx_mult_cmplx_f32.c
         )
 
 # Add executable. Default name is the project name, version 0.1
@@ -19,7 +30,10 @@ add_executable(Pico2UltraHiResUSBDDC
         i2s_pio_interface.c
         transmit_to_dac.c
         upsampling_coef.c
+        fft_fir_coef.c
         upsampling.c
+        fft_fir_core0.c
+        fft_fir_core1.c
         ringbuffer.c
         debug_with_gpio.c
         ess_specific.c
@@ -62,6 +76,20 @@ target_link_libraries(Pico2UltraHiResUSBDDC
         pico_audio_i2s
         hardware_uart
         hardware_i2c
+        pico_float
+)
+
+pico_set_float_implementation(Pico2UltraHiResUSBDDC pico_vfp)
+
+target_link_options(Pico2UltraHiResUSBDDC PRIVATE
+        -flto
+        "LINKER:-u,__wrap_printf"
+        "LINKER:-u,__wrap_puts"
+        "LINKER:-u,__wrap_putchar"
+        "LINKER:-u,__wrap_getchar"
+        "LINKER:-u,__wrap_vprintf"
+        "LINKER:-u,__wrap_powf"
+        "LINKER:-u,__wrap_powintf"
 )
 
 pico_add_extra_outputs(Pico2UltraHiResUSBDDC)
