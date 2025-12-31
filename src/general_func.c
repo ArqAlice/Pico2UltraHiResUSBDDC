@@ -5,6 +5,7 @@
 * https://opensource.org/licenses/mit-license.php
 */
 
+#include <math.h>
 #include "common.h"
 #include "hardware/vreg.h"
 #include "hardware/clocks.h"
@@ -99,7 +100,7 @@ void volume_control(void)
 		}
 		else
 		{
-			audio_state.vol_float = saturation_f32(pow(10, (float)audio_state.acq_volume / (float)VOLUME_RESOLUTION / 20.0), 1.0, 0);
+			audio_state.vol_float = saturation_f32(powf(10.0f, (float)audio_state.acq_volume / (float)VOLUME_RESOLUTION / 20.0f), 1.0f, 0.0f);
 		}
 	}
 	else

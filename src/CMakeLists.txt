@@ -76,7 +76,10 @@ target_link_libraries(Pico2UltraHiResUSBDDC
         pico_audio_i2s
         hardware_uart
         hardware_i2c
+        pico_float
 )
+
+pico_set_float_implementation(Pico2UltraHiResUSBDDC pico_vfp)
 
 target_link_options(Pico2UltraHiResUSBDDC PRIVATE
         -flto
@@ -85,6 +88,8 @@ target_link_options(Pico2UltraHiResUSBDDC PRIVATE
         "LINKER:-u,__wrap_putchar"
         "LINKER:-u,__wrap_getchar"
         "LINKER:-u,__wrap_vprintf"
+        "LINKER:-u,__wrap_powf"
+        "LINKER:-u,__wrap_powintf"
 )
 
 pico_add_extra_outputs(Pico2UltraHiResUSBDDC)
