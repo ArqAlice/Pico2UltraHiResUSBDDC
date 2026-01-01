@@ -37,7 +37,6 @@ volatile bool is_high_power_mode = true;
 
 // タイマー割り込み
 struct repeating_timer timer0; // デジタルフィルタ演算を割り込みでトリガする
-volatile bool can_proceed_upsampling_core0 = false;
 
 // ring buffer
 RINGBUFFER buffer_ep_Lch;
@@ -81,8 +80,6 @@ void restart_timer0(void)
 // アップサンプリング処理のタイミングをセットする
 bool __not_in_flash_func(core0_timer_callback)(struct repeating_timer *t)
 {
-	can_proceed_upsampling_core0 = true;
-
 	// ES9038Q2Mの周波数切り替え時のノイズ対策
 	if(USE_ESS_DAC && KIND_ESS_DAC == ES9038Q2M && get_ess_dac_mute())
 	{
@@ -155,6 +152,25 @@ bool __not_in_flash_func(core0_timer_callback)(struct repeating_timer *t)
 		{
 			is_cleared_buffer = false;
 		}
+
+		// ESS DAC用I2C送信処理
+		if (USE_ESS_DAC)
+		{
+			int64_t elapsed_us = absolute_time_diff_us(time_start_i2c_transfer, get_absolute_time());
+
+			if ((!i2c_dma_is_busy()) && (elapsed_us >= 1000))
+			{
+				uint16_t size = i2c_ringbuf_get_size_using(&i2c_ringbuffer0);
+				if (size >= SIZE_I2C_TRANSFER_UNIT)
+				{
+					uint8_t buffer[SIZE_I2C_RINGBUFFER];
+					i2c_ringbuf_read_array(buffer, SIZE_I2C_TRANSFER_UNIT, &i2c_ringbuffer0);
+					i2c_write_dma(I2C_PORT, I2C_ESS_DAC_ADDR >>1, buffer, SIZE_I2C_TRANSFER_UNIT, false);
+					time_start_i2c_transfer = get_absolute_time();
+				}
+			}
+		}
+
 		now_playing_old = now_playing;
 
 		count = 0;
@@ -262,31 +278,9 @@ int main(void)
 	{
 		// watchdog_update();
 
-		if (can_proceed_upsampling_core0)
-		{
-			can_proceed_upsampling_core0 = false;
-
-			if(TEST_MODE) gpio_put(TEST_PIN1, true);
-			upsampling_process_core0();
-			if(TEST_MODE) gpio_put(TEST_PIN1, false);
-		}
-
-		if (USE_ESS_DAC)
-		{
-			int64_t elapsed_us = absolute_time_diff_us(time_start_i2c_transfer, get_absolute_time());
-
-			if ((!i2c_dma_is_busy()) && (elapsed_us >= 1000))
-			{
-				uint16_t size = i2c_ringbuf_get_size_using(&i2c_ringbuffer0);
-				if (size >= SIZE_I2C_TRANSFER_UNIT)
-				{
-					uint8_t buffer[SIZE_I2C_RINGBUFFER];
-					i2c_ringbuf_read_array(buffer, SIZE_I2C_TRANSFER_UNIT, &i2c_ringbuffer0);
-					i2c_write_dma(I2C_PORT, I2C_ESS_DAC_ADDR >>1, buffer, SIZE_I2C_TRANSFER_UNIT, false);
-					time_start_i2c_transfer = get_absolute_time();
-				}
-			}
-		}
+		if(TEST_MODE) gpio_put(TEST_PIN1, true);
+		upsampling_process_core0();
+		if(TEST_MODE) gpio_put(TEST_PIN1, false);
 
 		sleep_us(1);
 	}
