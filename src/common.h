@@ -28,7 +28,7 @@
 
 // String Desc.
 #define MFG_NAME ("ArqAlice")
-#define DEVICE_NAME ("Pico2 UltraHiRes USB-DDC")
+#define DEVICE_NAME ("Felis 7 USB-DAC")
 #define WEBSITE_ADDR ("y.tomi0131@gmail.com:")
 
 // Faster I2S slew rate
@@ -71,7 +71,7 @@
 #define ENABLE_ESS_DAC_THD_COMPEN (true)
 #define ESS_THD_COMPEN_C2 (2) // 16bit signed int
 #define ESS_THD_COMPEN_C3 (-90) // 16bit signed int
-#define ESS_DPLL_BANDWIDTH (0x80) // 0~255, 0 is DPLL off
+#define ESS_DPLL_BANDWIDTH (0xA0) // 0~255, 0 is DPLL off
 #define ESS_DPLL_LOCKSPEED (8)   // 0~16
 #define TIME_ES9038Q2M_DEPOP_USEC (40000)
 #define DAC_ENABLE_PIN (5)
