@@ -20,7 +20,6 @@ void ess_dac_i2c_setup(void)
 	uint16_t ratio_core0 = get_ratio_upsampling_core0(audio_state.freq);
 	uint16_t ratio_core1 = get_ratio_upsampling_core1();
 	uint32_t output_fs = audio_state.freq * ratio_core0 * ratio_core1;
-	bool external_upsampling = (ratio_core0 * ratio_core1) > 1;
 
 	if (KIND_ESS_DAC == ES9010K2M)
 	{
