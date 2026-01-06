@@ -116,6 +116,17 @@ void ess_dac_i2c_setup(void)
 		i2cbuf[1] = 0x00 | ((uint8_t)ESS_DPLL_LOCKSPEED & 0xF);
 		i2c_write_blocking(I2C_PORT, I2C_ESS_DAC_ADDR >>1, i2cbuf, 2, true);
 		sleep_ms(1);
+
+		// DAC内蔵ボリュームを使うときはボリュームを最小にしておく
+		if(ENABLE_ESS_DAC_VOLUME)
+		{
+			i2cbuf[0] = 0x0F; // Resister #15 volume1
+			i2cbuf[1] = 0xFF;
+			i2c_write_blocking(I2C_PORT, I2C_ESS_DAC_ADDR >>1, i2cbuf, 2, true);
+			i2cbuf[0] = 0x10; // Resister #16 volume2
+			i2cbuf[1] = 0xFF;
+			i2c_write_blocking(I2C_PORT, I2C_ESS_DAC_ADDR >>1, i2cbuf, 2, true);
+		}
 	}
 
 	else if(KIND_ESS_DAC == ES9039Q2M)
@@ -201,6 +212,17 @@ void ess_dac_i2c_setup(void)
 		i2cbuf[1] = bandwidth;
 		i2c_write_blocking(I2C_PORT, I2C_ESS_DAC_ADDR >>1, i2cbuf, 2, true);
 		sleep_ms(1);
+
+		// DAC内蔵ボリュームを使うときはボリュームを最小にしておく
+		if(ENABLE_ESS_DAC_VOLUME)
+		{
+			i2cbuf[0] = 0x4A; // Resister #74 volume ch1
+			i2cbuf[1] = 0xFF;
+			i2c_write_blocking(I2C_PORT, I2C_ESS_DAC_ADDR >>1, i2cbuf, 2, true);
+			i2cbuf[0] = 0x4B; // Resister #75 volume ch2
+			i2cbuf[1] = 0xFF;
+			i2c_write_blocking(I2C_PORT, I2C_ESS_DAC_ADDR >>1, i2cbuf, 2, true);
+		}
 	}
 }
 
