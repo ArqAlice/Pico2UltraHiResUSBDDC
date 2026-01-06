@@ -28,11 +28,11 @@
 
 // String Desc.
 #define MFG_NAME ("ArqAlice")
-#define DEVICE_NAME ("Pico2 UltraHiRes USB-DDC")
+#define DEVICE_NAME ("Felis 7 USB-DAC")
 #define WEBSITE_ADDR ("y.tomi0131@gmail.com:")
 
 // Faster I2S slew rate
-#define I2S_SLEWRATE_FAST_ENABLE (false)
+#define I2S_SLEWRATE_FAST_ENABLE (true)
 
 // Enhancement I2S signal output current
 #define I2S_STRENGTH_REINFORCE_ENABLE (true)
@@ -58,19 +58,19 @@
 #define CORE0_UP_RATIO_HP (8)
 #define CORE0_UP_RATIO_LP (4)
 // Core1 ratio is applied directly (1/2/4 are supported).
-#define CORE1_UP_RATIO_HP (1)
+#define CORE1_UP_RATIO_HP (2)
 #define CORE1_UP_RATIO_LP (1)
 #define DEFAULT_GAIN_RATIO (0.75) // Adjust this according to your filter to avoid clipping.
 
 // ESS DAC Specific
-#define USE_ESS_DAC (false)
-#define KIND_ESS_DAC (ESS_DAC_NONE)
-#define I2C_ESS_DAC_ADDR (ADDR0_NONE)
-#define ENABLE_ES9038Q2M_DEPOP (false)
-#define ENABLE_ESS_DAC_VOLUME (false)
-#define ENABLE_ESS_DAC_THD_COMPEN (false)
-#define ESS_THD_COMPEN_C2 (0) // 16bit signed int
-#define ESS_THD_COMPEN_C3 (0) // 16bit signed int
+#define USE_ESS_DAC (true)
+#define KIND_ESS_DAC (ES9038Q2M)
+#define I2C_ESS_DAC_ADDR (ADDR0_ES9038Q2M)
+#define ENABLE_ES9038Q2M_DEPOP (true)
+#define ENABLE_ESS_DAC_VOLUME (true)
+#define ENABLE_ESS_DAC_THD_COMPEN (true)
+#define ESS_THD_COMPEN_C2 (2) // 16bit signed int
+#define ESS_THD_COMPEN_C3 (-90) // 16bit signed int
 #define ESS_DPLL_BANDWIDTH (0xA0) // 0~255, 0 is DPLL off
 #define ESS_DPLL_LOCKSPEED (8)   // 0~16
 #define TIME_ES9038Q2M_DEPOP_USEC (40000)
