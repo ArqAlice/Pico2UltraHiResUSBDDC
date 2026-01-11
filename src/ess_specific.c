@@ -270,7 +270,7 @@ void ess_dac_volume(void)
 				// i2c_ringbuf_set_data(I2C_PORT, I2C_ESS_DAC_ADDR >> 1, i2cbuf, 2, false, &i2c_rb_buf);
 				// i2c_ringbuf_write(&i2c_rb_buf, &i2c_ringbuffer0);
 
-				float vol = saturation_f32(powf(10.0f, (float)audio_state.acq_volume / (float)VOLUME_RESOLUTION / 20.0f), 1.0f, 0.001f) * DEFAULT_GAIN_RATIO;
+				float vol = saturation_f32(powf(10.0f, (float)audio_state.acq_volume / (float)VOLUME_RESOLUTION / 20.0f), 1.0f, 0.001f);
 				float log10_vol = log10f(vol * 10.0f);
 				float compen_c2 = ((float)ESS_THD_COMPEN_C2) * log10_vol;
 				float compen_c3 = ((float)ESS_THD_COMPEN_C3) * log10_vol;
@@ -297,7 +297,7 @@ void ess_dac_volume(void)
 			// THD compensationの音量による影響を補正する
 			if (ENABLE_ESS_THD_COMPEN_VOL_CORR && ENABLE_ESS_DAC_THD_COMPEN)
 			{
-				float vol = saturation_f32(powf(10.0f, (float)audio_state.acq_volume / (float)VOLUME_RESOLUTION / 20.0f), 1.0f, 0.001f) * DEFAULT_GAIN_RATIO;
+				float vol = saturation_f32(powf(10.0f, (float)audio_state.acq_volume / (float)VOLUME_RESOLUTION / 20.0f), 1.0f, 0.001f);
 				float log10_vol = log10f(vol * 10.0f);
 				float compen_c2 = ((float)ESS_THD_COMPEN_C2) * log10_vol;
 				float compen_c3 = ((float)ESS_THD_COMPEN_C3) * log10_vol;
