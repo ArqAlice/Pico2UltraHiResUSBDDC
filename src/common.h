@@ -69,6 +69,7 @@
 #define ENABLE_ES9038Q2M_DEPOP (false)
 #define ENABLE_ESS_DAC_VOLUME (false)
 #define ENABLE_ESS_DAC_THD_COMPEN (false)
+#define ENABLE_ESS_THD_COMPEN_VOL_CORR (false)
 #define ESS_THD_COMPEN_C2 (0) // 16bit signed int
 #define ESS_THD_COMPEN_C3 (0) // 16bit signed int
 #define ESS_DPLL_BANDWIDTH (0xA0) // 0~255, 0 is DPLL off
@@ -117,10 +118,9 @@
 // LED
 #define ONBOARD_LED_PIN (25)
 
-// オーディオ信号処理周期の設定(timer割り込み処理)
+// Core0 Timer0 period (us) 雑多な処理用
 #define TIMER0_US (250)
 
-#define TIMER_US_CORE1 (250)
 // Core1 DMA/processing chunk size (us). Larger values give more upsampling time.
 #define CORE1_PROCESS_US (2000)
 
@@ -149,8 +149,10 @@
 #define DEFAULT_VOLUME (0 * VOLUME_RESOLUTION)
 
 // ノンブロッキングI2C
-#define SIZE_I2C_RINGBUFFER (16)
+#define SIZE_I2C_RINGBUFFER (8)
+#define SIZE_I2C_TRANSFER_MAX (32)
 #define SIZE_I2C_TRANSFER_UNIT (2)
+#define I2C_ESS_DAC_TRANSFER_INTERVAL_USEC (90)
 
 typedef struct
 {

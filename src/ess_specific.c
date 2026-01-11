@@ -249,24 +249,77 @@ void ess_dac_volume(void)
 	static uint16_t volume = 0;
 	if (audio_state.acq_volume != volume)
 	{
-		uint8_t i2cbuf[4] = {0, 0, 0, 0};
+		uint8_t i2cbuf[20] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+		I2C_RB_DATA i2c_rb_buf;
+
 		if (KIND_ESS_DAC == ES9038Q2M)
 		{
 			float vol_dB_2 = -saturation_f32((float)audio_state.acq_volume / 128.0, 0.0, -256.0);
 			i2cbuf[0] = 0x0F; // Resister #15 volume1
 			i2cbuf[1] = (uint8_t)vol_dB_2;
-			i2cbuf[2] = 0x10; // Resister #16 volume2
-			i2cbuf[3] = (uint8_t)vol_dB_2;
+			i2cbuf[2] = (uint8_t)vol_dB_2;
+
+			i2c_ringbuf_set_data(I2C_PORT, I2C_ESS_DAC_ADDR >> 1, i2cbuf, 3, false, &i2c_rb_buf);
+			i2c_ringbuf_write(&i2c_rb_buf, &i2c_ringbuffer0);
+
+			// THD compensationの音量による影響を補正する
+			if (ENABLE_ESS_THD_COMPEN_VOL_CORR && ENABLE_ESS_DAC_THD_COMPEN)
+			{
+				// i2cbuf[0] = 0x0D; // Resister #13 THD Bypass
+				// i2cbuf[1] = 0x00; // THD compensation enable
+				// i2c_ringbuf_set_data(I2C_PORT, I2C_ESS_DAC_ADDR >> 1, i2cbuf, 2, false, &i2c_rb_buf);
+				// i2c_ringbuf_write(&i2c_rb_buf, &i2c_ringbuffer0);
+
+				float vol = saturation_f32(powf(10.0f, (float)audio_state.acq_volume / (float)VOLUME_RESOLUTION / 20.0f), 1.0f, 0.001f) * DEFAULT_GAIN_RATIO;
+				float log10_vol = log10f(vol * 10.0f);
+				float compen_c2 = ((float)ESS_THD_COMPEN_C2) * log10_vol;
+				float compen_c3 = ((float)ESS_THD_COMPEN_C3) * log10_vol;
+				i2cbuf[0] = 0x16; // THD Compensation start address
+				i2cbuf[1] = (uint8_t)(((int16_t)compen_c2) & 0xFF);
+				i2cbuf[2] = (uint8_t)((((int16_t)compen_c2) & 0xFF00) >> 8);
+				i2cbuf[3] = (uint8_t)(((int16_t)compen_c3) & 0xFF);
+				i2cbuf[4] = (uint8_t)((((int16_t)compen_c3) & 0xFF00) >> 8);
+
+				i2c_ringbuf_set_data(I2C_PORT, I2C_ESS_DAC_ADDR >> 1, i2cbuf, 5, false, &i2c_rb_buf);
+				i2c_ringbuf_write(&i2c_rb_buf, &i2c_ringbuffer0);
+			}
 		}
 		else if (KIND_ESS_DAC == ES9039Q2M)
 		{
 			float vol_dB_2 = -saturation_f32((float)audio_state.acq_volume / 128.0, 0.0, -256.0);
 			i2cbuf[0] = 0x4A; // Resister #74 volume ch1
 			i2cbuf[1] = (uint8_t)vol_dB_2;
-			i2cbuf[2] = 0x4B; // Resister #75 volume ch2
-			i2cbuf[3] = (uint8_t)vol_dB_2;
+			i2cbuf[2] = (uint8_t)vol_dB_2;
+
+			i2c_ringbuf_set_data(I2C_PORT, I2C_ESS_DAC_ADDR >> 1, i2cbuf, 3, false, &i2c_rb_buf);
+			i2c_ringbuf_write(&i2c_rb_buf, &i2c_ringbuffer0);
+
+			// THD compensationの音量による影響を補正する
+			if (ENABLE_ESS_THD_COMPEN_VOL_CORR && ENABLE_ESS_DAC_THD_COMPEN)
+			{
+				float vol = saturation_f32(powf(10.0f, (float)audio_state.acq_volume / (float)VOLUME_RESOLUTION / 20.0f), 1.0f, 0.001f) * DEFAULT_GAIN_RATIO;
+				float log10_vol = log10f(vol * 10.0f);
+				float compen_c2 = ((float)ESS_THD_COMPEN_C2) * log10_vol;
+				float compen_c3 = ((float)ESS_THD_COMPEN_C3) * log10_vol;
+				i2cbuf[0] = 0x5B; // THD Compensation C2 start address
+				i2cbuf[1] = (uint8_t)(((int16_t)compen_c2) & 0xFF);
+				i2cbuf[2] = (uint8_t)((((int16_t)compen_c2) & 0xFF00) >> 8);
+				i2cbuf[3] = (uint8_t)(((int16_t)compen_c2) & 0xFF);
+				i2cbuf[4] = (uint8_t)((((int16_t)compen_c2) & 0xFF00) >> 8);
+
+				i2c_ringbuf_set_data(I2C_PORT, I2C_ESS_DAC_ADDR >> 1, i2cbuf, 5, false, &i2c_rb_buf);
+				i2c_ringbuf_write(&i2c_rb_buf, &i2c_ringbuffer0);
+
+				i2cbuf[0] = 0x6B; // THD Compensation C3 start address
+				i2cbuf[1] = (uint8_t)(((int16_t)compen_c3) & 0xFF);
+				i2cbuf[2] = (uint8_t)((((int16_t)compen_c3) & 0xFF00) >> 8);
+				i2cbuf[3] = (uint8_t)(((int16_t)compen_c3) & 0xFF);
+				i2cbuf[4] = (uint8_t)((((int16_t)compen_c3) & 0xFF00) >> 8);
+
+				i2c_ringbuf_set_data(I2C_PORT, I2C_ESS_DAC_ADDR >> 1, i2cbuf, 5, false, &i2c_rb_buf);
+				i2c_ringbuf_write(&i2c_rb_buf, &i2c_ringbuffer0);
+			}
 		}
-		i2c_ringbuf_write_array(i2cbuf, 4, &i2c_ringbuffer0);
 	}
 	volume = audio_state.acq_volume;
 }
@@ -279,7 +332,10 @@ void ess_dac_mute(void)
 	{
 		i2cbuf[0] = 0x07; // Resister #7
 		i2cbuf[1] = 0x01; // mute
-		i2c_ringbuf_write_array(i2cbuf, 2, &i2c_ringbuffer0);
+
+		I2C_RB_DATA i2c_rb_buf;
+		i2c_ringbuf_set_data(I2C_PORT, I2C_ESS_DAC_ADDR >> 1, i2cbuf, 2, false, &i2c_rb_buf);
+		i2c_ringbuf_write(&i2c_rb_buf, &i2c_ringbuffer0);
 	}
 	is_ess_dac_mute = true;
 }
@@ -292,7 +348,10 @@ void ess_dac_unmute(void)
 	{
 		i2cbuf[0] = 0x07; // Resister #7
 		i2cbuf[1] = 0x00; // unmute
-		i2c_ringbuf_write_array(i2cbuf, 2, &i2c_ringbuffer0);
+
+		I2C_RB_DATA i2c_rb_buf;
+		i2c_ringbuf_set_data(I2C_PORT, I2C_ESS_DAC_ADDR >> 1, i2cbuf, 2, false, &i2c_rb_buf);
+		i2c_ringbuf_write(&i2c_rb_buf, &i2c_ringbuffer0);
 	}
 	is_ess_dac_mute = false;
 }

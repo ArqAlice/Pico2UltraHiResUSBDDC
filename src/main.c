@@ -1,9 +1,9 @@
 /*
-* Copyright (c) 2025 ArqAlice 
-*
-* Released under the MIT license
-* https://opensource.org/licenses/mit-license.php
-*/
+ * Copyright (c) 2025 ArqAlice
+ *
+ * Released under the MIT license
+ * https://opensource.org/licenses/mit-license.php
+ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -81,19 +81,19 @@ void restart_timer0(void)
 bool __not_in_flash_func(core0_timer_callback)(struct repeating_timer *t)
 {
 	// ES9038Q2Mの周波数切り替え時のノイズ対策
-	if(USE_ESS_DAC && KIND_ESS_DAC == ES9038Q2M && get_ess_dac_mute())
+	if (USE_ESS_DAC && KIND_ESS_DAC == ES9038Q2M && get_ess_dac_mute())
 	{
-		if(enable_output)
+		if (enable_output)
 		{
 			int64_t elapsed_us = absolute_time_diff_us(time_start_output, get_absolute_time());
-			if(elapsed_us > TIME_ES9038Q2M_DEPOP_USEC)
+			if (elapsed_us > TIME_ES9038Q2M_DEPOP_USEC)
 			{
 				ess_dac_unmute();
 			}
 		}
 	}
 
-	//volatile static uint32_t now_playing_old = 0;
+	// volatile static uint32_t now_playing_old = 0;
 	static volatile int count = 0;
 	count++;
 	if (count >= MILLISEC50)
@@ -105,7 +105,7 @@ bool __not_in_flash_func(core0_timer_callback)(struct repeating_timer *t)
 			if (!is_high_power_mode)
 			{
 				is_high_power_mode = true;
-				if(USE_ESS_DAC && KIND_ESS_DAC == ES9038Q2M)
+				if (USE_ESS_DAC && KIND_ESS_DAC == ES9038Q2M)
 					ess_dac_mute();
 				clear_ringbuffer(&buffer_ep_Lch);
 				clear_ringbuffer(&buffer_ep_Rch);
@@ -121,7 +121,7 @@ bool __not_in_flash_func(core0_timer_callback)(struct repeating_timer *t)
 			if (is_high_power_mode)
 			{
 				is_high_power_mode = false;
-				if(USE_ESS_DAC && KIND_ESS_DAC == ES9038Q2M)
+				if (USE_ESS_DAC && KIND_ESS_DAC == ES9038Q2M)
 					ess_dac_mute();
 				clear_ringbuffer(&buffer_ep_Lch);
 				clear_ringbuffer(&buffer_ep_Rch);
@@ -143,12 +143,14 @@ bool __not_in_flash_func(core0_timer_callback)(struct repeating_timer *t)
 			clear_ringbuffer(&buffer_ep_Rch);
 			clear_ringbuffer(&buffer_upsr_data_Lch_0);
 			clear_ringbuffer(&buffer_upsr_data_Rch_0);
+			// clear_i2c_ringbuffer(&i2c_ringbuffer0);
 			clear_bq_filter_delay();
+			// i2c_dma_stop_and_clear();
 			renew_clock(is_high_power_mode);
 			now_playing = 0;
 			is_cleared_buffer = true;
 		}
-		else if(now_playing != now_playing_old)
+		else if (now_playing != now_playing_old)
 		{
 			is_cleared_buffer = false;
 		}
@@ -163,7 +165,7 @@ bool __not_in_flash_func(core0_timer_callback)(struct repeating_timer *t)
 int main(void)
 {
 	// 外部電源有効化ピン
-	if(USE_EXT_POWER_ENABLE)
+	if (USE_EXT_POWER_ENABLE)
 	{
 		gpio_init(EXT_POWER_ENABLE_PIN);
 		gpio_set_dir(EXT_POWER_ENABLE_PIN, GPIO_OUT);
@@ -185,7 +187,7 @@ int main(void)
 	stdout_uart_init();
 
 	// テストモード用ピンを有効化
-	if(TEST_MODE)
+	if (TEST_MODE)
 	{
 		gpio_init(TEST_PIN1);
 		gpio_init(TEST_PIN2);
@@ -260,23 +262,27 @@ int main(void)
 	{
 		// watchdog_update();
 
-		if(TEST_MODE) gpio_put(TEST_PIN1, true);
+		if (TEST_MODE)
+			gpio_put(TEST_PIN1, true);
 		upsampling_process_core0();
-		if(TEST_MODE) gpio_put(TEST_PIN1, false);
+		if (TEST_MODE)
+			gpio_put(TEST_PIN1, false);
 
 		// ESS DAC用I2C送信処理
 		if (USE_ESS_DAC)
 		{
 			int64_t elapsed_us = absolute_time_diff_us(time_start_i2c_transfer, get_absolute_time());
+			static int size_transfer = 0;
 
-			if ((!i2c_dma_is_busy()) && (elapsed_us >= 1000))
+			if ((!i2c_dma_is_busy()) && (elapsed_us >= I2C_ESS_DAC_TRANSFER_INTERVAL_USEC * (size_transfer + 1)))
 			{
-				uint16_t size = i2c_ringbuf_get_size_using(&i2c_ringbuffer0);
-				if (size >= SIZE_I2C_TRANSFER_UNIT)
+				uint16_t size_using = i2c_ringbuf_get_size_using(&i2c_ringbuffer0);
+				if (size_using > 0)
 				{
-					uint8_t buffer[SIZE_I2C_RINGBUFFER];
-					i2c_ringbuf_read_array(buffer, SIZE_I2C_TRANSFER_UNIT, &i2c_ringbuffer0);
-					i2c_write_dma(I2C_PORT, I2C_ESS_DAC_ADDR >>1, buffer, SIZE_I2C_TRANSFER_UNIT, false);
+					I2C_RB_DATA buffer;
+					i2c_ringbuf_read(&buffer, &i2c_ringbuffer0);
+					i2c_write_dma(buffer.i2c, buffer.addr_7bit, buffer.data, buffer.len, buffer.nostop);
+					size_transfer = buffer.len;
 					time_start_i2c_transfer = get_absolute_time();
 				}
 			}
