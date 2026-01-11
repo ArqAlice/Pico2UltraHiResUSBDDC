@@ -1,9 +1,9 @@
 /*
-* Copyright (c) 2025 ArqAlice 
-*
-* Released under the MIT license
-* https://opensource.org/licenses/mit-license.php
-*/
+ * Copyright (c) 2025 ArqAlice
+ *
+ * Released under the MIT license
+ * https://opensource.org/licenses/mit-license.php
+ */
 
 #include <math.h>
 #include "common.h"
@@ -74,6 +74,9 @@ void renew_clock(bool is_high_power)
 
 	// PIO分周率を再設定
 	reset_i2s_freq();
+
+	// I2C周波数を再設定
+	// i2c_set_baudrate(I2C_PORT, 104 * 100000);
 }
 
 // DACを設定するためのI2C
@@ -107,5 +110,4 @@ void volume_control(void)
 	{
 		audio_state.vol_float = 0.;
 	}
-
 }

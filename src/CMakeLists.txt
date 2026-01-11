@@ -89,7 +89,7 @@ target_link_options(Pico2UltraHiResUSBDDC PRIVATE
         "LINKER:-u,__wrap_getchar"
         "LINKER:-u,__wrap_vprintf"
         "LINKER:-u,__wrap_powf"
-        "LINKER:-u,__wrap_powintf"
+        "LINKER:-u,__wrap_log10f"
 )
 
 pico_add_extra_outputs(Pico2UltraHiResUSBDDC)
