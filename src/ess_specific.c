@@ -271,8 +271,9 @@ void ess_dac_volume(void)
 				// i2c_ringbuf_write(&i2c_rb_buf, &i2c_ringbuffer0);
 
 				float vol = saturation_f32(powf(10.0f, (float)audio_state.acq_volume / (float)VOLUME_RESOLUTION / 20.0f), 1.0f, 0.001f) * DEFAULT_GAIN_RATIO;
-				float compen_c2 = ((float)ESS_THD_COMPEN_C2) * vol;
-				float compen_c3 = ((float)ESS_THD_COMPEN_C3) * vol;
+				float log10_vol = log10f(vol * 10.0f);
+				float compen_c2 = ((float)ESS_THD_COMPEN_C2) * log10_vol;
+				float compen_c3 = ((float)ESS_THD_COMPEN_C3) * log10_vol;
 				i2cbuf[0] = 0x16; // THD Compensation start address
 				i2cbuf[1] = (uint8_t)(((int16_t)compen_c2) & 0xFF);
 				i2cbuf[2] = (uint8_t)((((int16_t)compen_c2) & 0xFF00) >> 8);
@@ -297,8 +298,9 @@ void ess_dac_volume(void)
 			if (ENABLE_ESS_THD_COMPEN_VOL_CORR && ENABLE_ESS_DAC_THD_COMPEN)
 			{
 				float vol = saturation_f32(powf(10.0f, (float)audio_state.acq_volume / (float)VOLUME_RESOLUTION / 20.0f), 1.0f, 0.001f) * DEFAULT_GAIN_RATIO;
-				float compen_c2 = ((float)ESS_THD_COMPEN_C2) * vol;
-				float compen_c3 = ((float)ESS_THD_COMPEN_C3) * vol;
+				float log10_vol = log10f(vol * 10.0f);
+				float compen_c2 = ((float)ESS_THD_COMPEN_C2) * log10_vol;
+				float compen_c3 = ((float)ESS_THD_COMPEN_C3) * log10_vol;
 				i2cbuf[0] = 0x5B; // THD Compensation C2 start address
 				i2cbuf[1] = (uint8_t)(((int16_t)compen_c2) & 0xFF);
 				i2cbuf[2] = (uint8_t)((((int16_t)compen_c2) & 0xFF00) >> 8);
