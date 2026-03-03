@@ -134,7 +134,6 @@ bool __not_in_flash_func(core0_timer_callback)(struct repeating_timer *t)
 
 		gpio_put(ONBOARD_LED_PIN, is_high_power_mode);
 
-		volume_control();
 
 		// 再生停止時にアップサンプリングフラグとバッファをクリアする
 		if ((now_playing == now_playing_old) && (!is_cleared_buffer))

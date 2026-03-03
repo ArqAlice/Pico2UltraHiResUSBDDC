@@ -97,28 +97,14 @@ void ess_dac_i2c_setup(void)
 		i2c_write_blocking(I2C_PORT, I2C_ESS_DAC_ADDR >> 1, i2cbuf, 2, true);
 		sleep_ms(1);
 
-		// DAC内蔵ボリュームを使うときはボリュームを最小にしておく
-		if (ENABLE_ESS_DAC_VOLUME)
-		{
-			i2cbuf[0] = 0x0F; // Resister #15 volume1
-			i2cbuf[1] = 0xFF; // 最小ボリューム
-			i2c_write_blocking(I2C_PORT, I2C_ESS_DAC_ADDR >> 1, i2cbuf, 2, true);
-			i2cbuf[0] = 0x10; // Resister #16 volume2
-			i2cbuf[1] = 0xFF; // 最小ボリューム
-			i2c_write_blocking(I2C_PORT, I2C_ESS_DAC_ADDR >> 1, i2cbuf, 2, true);
-			sleep_ms(1);
-		}
-		// DAC内蔵ボリュームを使わないときはボリュームを最大にしておく
-		else
-		{
-			i2cbuf[0] = 0x0F; // Resister #15 Volume Control ch1
-			i2cbuf[1] = 0x00; // 最大ボリューム
-			i2c_write_blocking(I2C_PORT, I2C_ESS_DAC_ADDR >> 1, i2cbuf, 2, true);
-			i2cbuf[0] = 0x10; // Resister #16 Volume Control ch2
-			i2cbuf[1] = 0x00; // 最大ボリューム
-			i2c_write_blocking(I2C_PORT, I2C_ESS_DAC_ADDR >> 1, i2cbuf, 2, true);
-			sleep_ms(1);
-		}
+		// ボリュームを最大にしておく
+		i2cbuf[0] = 0x0F; // Resister #15 Volume Control ch1
+		i2cbuf[1] = 0x00; // 最大ボリューム
+		i2c_write_blocking(I2C_PORT, I2C_ESS_DAC_ADDR >> 1, i2cbuf, 2, true);
+		i2cbuf[0] = 0x10; // Resister #16 Volume Control ch2
+		i2cbuf[1] = 0x00; // 最大ボリューム
+		i2c_write_blocking(I2C_PORT, I2C_ESS_DAC_ADDR >> 1, i2cbuf, 2, true);
+		sleep_ms(1);
 	}
 
 	else if (KIND_ESS_DAC == ES9039Q2M)
@@ -186,7 +172,7 @@ void ess_dac_i2c_setup(void)
 			i2cbuf[0] = 0x6B; // Resister #24 THD Compensation C3 CH1
 			i2cbuf[1] = (uint8_t)(ESS_THD_COMPEN_C3 & 0xFF);
 			i2c_write_blocking(I2C_PORT, I2C_ESS_DAC_ADDR >> 1, i2cbuf, 2, true);
-			i2cbuf[0] = 0x6C; // Resister #25 THD Compensation C3
+			i2cbuf[0] = 0x6C; // Resister #25 THD Compensation C3 CH1
 			i2cbuf[1] = (uint8_t)((ESS_THD_COMPEN_C3 & 0xFF00) >> 8);
 			i2c_write_blocking(I2C_PORT, I2C_ESS_DAC_ADDR >> 1, i2cbuf, 2, true);
 			sleep_ms(1);
@@ -212,18 +198,6 @@ void ess_dac_i2c_setup(void)
 		i2cbuf[1] = bandwidth;
 		i2c_write_blocking(I2C_PORT, I2C_ESS_DAC_ADDR >> 1, i2cbuf, 2, true);
 		sleep_ms(1);
-
-		// DAC内蔵ボリュームを使うときはボリュームを最小にしておく
-		if (ENABLE_ESS_DAC_VOLUME)
-		{
-			i2cbuf[0] = 0x4A; // Resister #74 volume ch1
-			i2cbuf[1] = 0xFF;
-			i2c_write_blocking(I2C_PORT, I2C_ESS_DAC_ADDR >> 1, i2cbuf, 2, true);
-			i2cbuf[0] = 0x4B; // Resister #75 volume ch2
-			i2cbuf[1] = 0xFF;
-			i2c_write_blocking(I2C_PORT, I2C_ESS_DAC_ADDR >> 1, i2cbuf, 2, true);
-			sleep_ms(1);
-		}
 	}
 }
 
@@ -246,7 +220,7 @@ bool get_ess_dac_mute(void)
 
 void ess_dac_volume(void)
 {
-	static uint16_t volume = 0;
+	static int16_t volume = 0;
 	if (audio_state.acq_volume != volume)
 	{
 		uint8_t i2cbuf[20] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
@@ -265,11 +239,6 @@ void ess_dac_volume(void)
 			// THD compensationの音量による影響を補正する
 			if (ENABLE_ESS_THD_COMPEN_VOL_CORR && ENABLE_ESS_DAC_THD_COMPEN)
 			{
-				// i2cbuf[0] = 0x0D; // Resister #13 THD Bypass
-				// i2cbuf[1] = 0x00; // THD compensation enable
-				// i2c_ringbuf_set_data(I2C_PORT, I2C_ESS_DAC_ADDR >> 1, i2cbuf, 2, false, &i2c_rb_buf);
-				// i2c_ringbuf_write(&i2c_rb_buf, &i2c_ringbuffer0);
-
 				float vol = saturation_f32(powf(10.0f, (float)audio_state.acq_volume / (float)VOLUME_RESOLUTION / 20.0f), 1.0f, 0.001f);
 				float log10_vol = log10f(vol * 10.0f);
 				float compen_c2 = ((float)ESS_THD_COMPEN_C2) * log10_vol;
