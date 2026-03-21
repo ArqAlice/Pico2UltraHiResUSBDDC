@@ -10,6 +10,7 @@
 #include "common.h"
 #include "stdbool.h"
 #include "nonblocking_i2c.h"
+#include "limits.h"
 
 static bool is_ess_dac_mute = false;
 extern I2C_RINGBUFFER i2c_ringbuffer0;
@@ -218,6 +219,18 @@ bool get_ess_dac_mute(void)
 	return is_ess_dac_mute;
 }
 
+float __not_in_flash_func(get_ess_dac_modulator_segment_position)(float volume, float declip_gain, float amplitude, float corr_offset, uint16_t num_segment)
+{
+	float absolute_volume = fabsf(volume * amplitude / (float)INT32_MAX * declip_gain);
+
+	float segment_index_float = absolute_volume / (float)num_segment;
+
+	uint16_t segment_index = (uint16_t)segment_index_float;
+	float segment_position = segment_index_float - (float)segment_index;
+
+	return saturation_f32(segment_position + corr_offset, 1.0f, 0.0f);
+}
+
 void ess_dac_volume(void)
 {
 	static int16_t volume = 0;
@@ -239,10 +252,10 @@ void ess_dac_volume(void)
 			// THD compensationの音量による影響を補正する
 			if (ENABLE_ESS_THD_COMPEN_VOL_CORR && ENABLE_ESS_DAC_THD_COMPEN)
 			{
-				float vol = saturation_f32(powf(10.0f, (float)audio_state.acq_volume / (float)VOLUME_RESOLUTION / 20.0f), 1.0f, 0.001f);
-				float log10_vol = log10f(vol * 10.0f);
-				float compen_c2 = ((float)ESS_THD_COMPEN_C2) * log10_vol;
-				float compen_c3 = ((float)ESS_THD_COMPEN_C3) * log10_vol;
+				float vol = saturation_f32(powf(10.0f, (float)audio_state.acq_volume / (float)VOLUME_RESOLUTION / 20.0f), 1.0f, 0.0000001f);
+				// float corr = get_ess_dac_modulator_segment_position(vol, DEFAULT_GAIN_RATIO, 1.0, 0.2, ESS_DAC_NUM_MODULATOR_SEGMENTS);
+				float compen_c2 = saturation_f32(((float)ESS_THD_COMPEN_C2) / vol, 32767.0f, -32768.0f);
+				float compen_c3 = saturation_f32(((float)ESS_THD_COMPEN_C3) / vol, 32767.0f, -32768.0f);
 				i2cbuf[0] = 0x16; // THD Compensation start address
 				i2cbuf[1] = (uint8_t)(((int16_t)compen_c2) & 0xFF);
 				i2cbuf[2] = (uint8_t)((((int16_t)compen_c2) & 0xFF00) >> 8);
@@ -266,10 +279,10 @@ void ess_dac_volume(void)
 			// THD compensationの音量による影響を補正する
 			if (ENABLE_ESS_THD_COMPEN_VOL_CORR && ENABLE_ESS_DAC_THD_COMPEN)
 			{
-				float vol = saturation_f32(powf(10.0f, (float)audio_state.acq_volume / (float)VOLUME_RESOLUTION / 20.0f), 1.0f, 0.001f);
-				float log10_vol = log10f(vol * 10.0f);
-				float compen_c2 = ((float)ESS_THD_COMPEN_C2) * log10_vol;
-				float compen_c3 = ((float)ESS_THD_COMPEN_C3) * log10_vol;
+				float vol = saturation_f32(powf(10.0f, (float)audio_state.acq_volume / (float)VOLUME_RESOLUTION / 20.0f), 1.0f, 0.0000001f);
+				// float corr = get_ess_dac_modulator_segment_position(vol, DEFAULT_GAIN_RATIO, 1.0, 0.2, ESS_DAC_NUM_MODULATOR_SEGMENTS);
+				float compen_c2 = saturation_f32(((float)ESS_THD_COMPEN_C2) / vol, 32767.0f, -32768.0f);
+				float compen_c3 = saturation_f32(((float)ESS_THD_COMPEN_C3) / vol, 32767.0f, -32768.0f);
 				i2cbuf[0] = 0x5B; // THD Compensation C2 start address
 				i2cbuf[1] = (uint8_t)(((int16_t)compen_c2) & 0xFF);
 				i2cbuf[2] = (uint8_t)((((int16_t)compen_c2) & 0xFF00) >> 8);
