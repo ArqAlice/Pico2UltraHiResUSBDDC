@@ -15,12 +15,16 @@
 #define ES9010K2M 1
 #define ES9038Q2M 2
 #define ES9039Q2M 3
+#define ES9038PRO 4
+#define ES9039PRO 5
 
 // ESS DAC Default ADDR
 #define ADDR0_NONE      0x00
 #define ADDR0_ES9010K2M 0x90
 #define ADDR0_ES9038Q2M 0x90
 #define ADDR0_ES9039Q2M 0x90
+#define ADDR0_ES9039PRO 0x90
+#define ADDR1_ES9039PRO 0x92
 
 extern void ess_dac_i2c_setup(void);
 extern void ess_dac_initialize(void);
