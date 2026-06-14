@@ -587,8 +587,9 @@ void ess_dac_volume(void)
 			i2cbuf[5] = (uint8_t)vol_dB_2;
 			i2cbuf[6] = (uint8_t)vol_dB_2;
 			i2cbuf[7] = (uint8_t)vol_dB_2;
+			i2cbuf[8] = (uint8_t)vol_dB_2;
 
-			i2c_ringbuf_set_data(I2C_PORT, I2C_ESS_DAC_ADDR >> 1, i2cbuf, 8, false, &i2c_rb_buf);
+			i2c_ringbuf_set_data(I2C_PORT, I2C_ESS_DAC_ADDR >> 1, i2cbuf, 9, false, &i2c_rb_buf);
 			i2c_ringbuf_write(&i2c_rb_buf, &i2c_ringbuffer0);
 
 			// THD compensationの音量による影響を補正する
