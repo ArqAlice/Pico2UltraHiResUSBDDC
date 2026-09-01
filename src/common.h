@@ -32,7 +32,7 @@
 #define WEBSITE_ADDR ("y.tomi0131@gmail.com:")
 
 // Faster I2S slew rate
-#define I2S_SLEWRATE_FAST_ENABLE (false)
+#define I2S_SLEWRATE_FAST_ENABLE (true)
 
 // Enhancement I2S signal output current
 #define I2S_STRENGTH_REINFORCE_ENABLE (true)
@@ -85,8 +85,6 @@
 // User Configurable end ------------------------------------------------------------
 
 // システムクロック
-//#define SYS_CLOCK_KHZ_44K (412000)
-//#define SYS_CLOCK_KHZ_48K (430000)
 #define SYS_CLOCK_KHZ_44K (336000)
 #define SYS_CLOCK_KHZ_48K (336000)
 #define SYS_CLOCK_KHZ_LP_44K (208000)
@@ -98,6 +96,36 @@
 #define V_CORE_HI VREG_VOLTAGE_1_25
 #define V_CORE_LO VREG_VOLTAGE_1_05
 
+// Low-power idle (WFI) configuration
+// When there is no audio work pending, the cores wait-for-interrupt instead of
+// busy-looping. The host connection (USB) is preserved because the USB clock/PLL
+// stay running (WFI only halts the core until the next interrupt).
+// Per-core enable flags (kept separate for bring-up / fault isolation):
+//   CORE0: WFI when there is no audio to upsample; wakes on timer0 (250us) or USB IRQ.
+//   CORE1: WFI when the output path is fully quiesced; wakes on a dedicated
+//          alarm pool created ON Core1 (hardware alarm 2 -> TIMER_IRQ_2, so the
+//          wake IRQ is enabled in Core1's own NVIC).
+// Set CORE1 to false to fall back to busy-wait on Core1.
+#define ENABLE_LOW_POWER_IDLE_CORE0 (true)
+#define ENABLE_LOW_POWER_IDLE_CORE1 (true)
+// Core1 WFI poll period (us) while PLAYBACK is active but this iteration has
+// nothing to submit (TX ring full / input starved). Keeps DMA re-arm latency
+// well below one 2ms chunk, so no underrun.
+#define CORE1_WFI_PLAY_US (250)
+// Core1 WFI poll period (us) while output is fully quiesced (stopped/idle).
+#define CORE1_WFI_IDLE_US (1000)
+// Core0 WFI poll periods (us), realized by dynamically changing timer0's
+// period: 250us while playing, 1ms while idle. Core0 WFI wakes on timer0
+// (proven) and on USB IRQ.
+#define CORE0_WFI_PLAY_US (250)
+#define CORE0_WFI_IDLE_US (1000)
+// "Playing" window: an audio packet arrived within this time => playing.
+#define CORE0_PLAY_DETECT_US (20000)
+// Housekeeping cadence in the timer ISR via absolute-time gate (500ms, same
+// as the original fixed 250us * 2000 ticks).
+#define CORE0_HOUSEKEEPING_US (500000)
+// (legacy) generic idle poll interval kept for reference
+#define IDLE_WFI_POLL_US CORE1_WFI_IDLE_US
 
 // 初期オーディオサンプル周波数
 #define AUDIO_INITIAL_FREQ (44100)
