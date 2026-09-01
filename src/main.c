@@ -31,6 +31,7 @@
 
 // パワー管理
 volatile bool is_high_power_mode = true;
+volatile bool idle_clock_down = false; // HIGH_POWER but LP settings applied (idle)
 
 // 処理タイミング制御用
 // Housekeeping cadence is enforced by an absolute-time gate inside the ISR
@@ -280,6 +281,39 @@ int main(void)
 	while (true)
 	{
 		// watchdog_update();
+
+		// Idle clock-down state machine (HIGH_POWER mode only).
+		// MUST run before upsampling: any pending work restores the original
+		// HIGH_POWER clock/voltage synchronously (~150-300us, far below the
+		// 5ms+ ep buffer headroom). Downclock only happens when fully idle:
+		// no packets for IDLE_DOWN_DELAY_US, no buffered data, output quiesced,
+		// no ESS I2C traffic.
+#if ENABLE_IDLE_DOWN_CLOCK
+		if (idle_clock_down || is_high_power_mode)
+		{
+			bool work_pending = (get_size_using(&buffer_ep_Lch) > 0) ||
+			                    (get_size_using(&buffer_ep_Rch) > 0) ||
+			                    (get_size_using(&buffer_upsr_data_Lch_0) > 0) ||
+			                    enable_output;
+			bool audio_recent = ((int64_t)(time_us_64() - last_audio_time_us) <
+			                     (int64_t)IDLE_DOWN_DELAY_US);
+			bool want_down = is_high_power_mode && !work_pending && !audio_recent;
+#if USE_ESS_DAC
+			if (i2c_dma_is_busy() || (i2c_ringbuf_get_size_using(&i2c_ringbuffer0) > 0))
+				want_down = false;
+#endif
+			if (want_down && !idle_clock_down)
+			{
+				idle_clock_down = true;
+				renew_clock_idle_down(true);
+			}
+			else if (!want_down && idle_clock_down)
+			{
+				idle_clock_down = false;
+				renew_clock_idle_down(false);
+			}
+		}
+#endif
 
 		if (TEST_MODE)
 			gpio_put(TEST_PIN1, true);
