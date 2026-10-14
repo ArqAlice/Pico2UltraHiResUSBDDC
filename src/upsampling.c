@@ -434,28 +434,28 @@ uint32_t __not_in_flash_func(upsampling_process_core1)(float *in_L, float *in_R,
         switch (freq_in)
         {
         case 88200:
-            profile = is_high_power_mode ? &core1_poly_in88200_out176400_pb20000_sb79380_u2_hp
-                                         : &core1_poly_in88200_out176400_pb20000_sb79380_u2_lp;
+            profile = is_high_power_mode ? &core1_poly_in88200_to_176400_u2_hp
+                                         : &core1_poly_in88200_to_176400_u2_lp;
             break;
         case 96000:
-            profile = is_high_power_mode ? &core1_poly_in96000_out192000_pb20000_sb86400_u2_hp
-                                         : &core1_poly_in96000_out192000_pb20000_sb86400_u2_lp;
+            profile = is_high_power_mode ? &core1_poly_in96000_to_192000_u2_hp
+                                         : &core1_poly_in96000_to_192000_u2_lp;
             break;
         case 176400:
-            profile = is_high_power_mode ? &core1_poly_in176400_out352800_pb20000_sb158760_u2_hp
-                                         : &core1_poly_in176400_out352800_pb20000_sb158760_u2_lp;
+            profile = is_high_power_mode ? &core1_poly_in176400_to_352800_u2_hp
+                                         : &core1_poly_in176400_to_352800_u2_lp;
             break;
         case 192000:
-            profile = is_high_power_mode ? &core1_poly_in192000_out384000_pb20000_sb172800_u2_hp
-                                         : &core1_poly_in192000_out384000_pb20000_sb172800_u2_lp;
+            profile = is_high_power_mode ? &core1_poly_in192000_to_384000_u2_hp
+                                         : &core1_poly_in192000_to_384000_u2_lp;
             break;
         case 352800:
-            profile = is_high_power_mode ? &core1_poly_in352800_out705600_pb20000_sb317520_u2_hp
-                                         : &core1_poly_in352800_out705600_pb20000_sb317520_u2_lp;
+            profile = is_high_power_mode ? &core1_poly_in352800_to_705600_u2_hp
+                                         : &core1_poly_in352800_to_705600_u2_lp;
             break;
         case 384000:
-            profile = is_high_power_mode ? &core1_poly_in384000_out768000_pb20000_sb345600_u2_hp
-                                         : &core1_poly_in384000_out768000_pb20000_sb345600_u2_lp;
+            profile = is_high_power_mode ? &core1_poly_in384000_to_768000_u2_hp
+                                         : &core1_poly_in384000_to_768000_u2_lp;
             break;
         default:
             break;

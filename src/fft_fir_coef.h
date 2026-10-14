@@ -16,21 +16,21 @@
 #define FFT_FIR_MAX_HEAD_PARTS (1)
 #define FFT_FIR_MAX_TAIL_PARTS (1)
 #define FFT_FIR_MAX_UP_RATIO (8)
-#define FFT_FIR_MAX_PHASE_LEN (56)
+#define FFT_FIR_MAX_PHASE_LEN (59)
 #define FFT_FIR_MAX_INPUT (FFT_FIR_HEAD_BLOCK_LEN)
 #define FFT_FIR_MAX_OUTPUT (FFT_FIR_HEAD_BLOCK_LEN * FFT_FIR_MAX_UP_RATIO)
 
-#define CORE1_POLY_TAPS_MAX (30)
-#define CORE1_POLY_PHASE_LEN_MAX (15)
+#define CORE1_POLY_TAPS_MAX (22)
+#define CORE1_POLY_PHASE_LEN_MAX (11)
 
-#define FFT_FIR_HALF_BAND_EVEN_TAPS_44 (16)
-#define FFT_FIR_HALF_BAND_CENTER_INDEX_44 (7)
-#define FFT_FIR_HALF_BAND_EVEN_TAPS_48 (16)
-#define FFT_FIR_HALF_BAND_CENTER_INDEX_48 (7)
-#define FFT_FIR_HALF_BAND_EVEN_TAPS_44_HI (16)
-#define FFT_FIR_HALF_BAND_CENTER_INDEX_44_HI (7)
-#define FFT_FIR_HALF_BAND_EVEN_TAPS_48_HI (16)
-#define FFT_FIR_HALF_BAND_CENTER_INDEX_48_HI (7)
+#define FFT_FIR_HALF_BAND_EVEN_TAPS_44 (28)
+#define FFT_FIR_HALF_BAND_CENTER_INDEX_44 (13)
+#define FFT_FIR_HALF_BAND_EVEN_TAPS_48 (28)
+#define FFT_FIR_HALF_BAND_CENTER_INDEX_48 (13)
+#define FFT_FIR_HALF_BAND_EVEN_TAPS_44_HI (28)
+#define FFT_FIR_HALF_BAND_CENTER_INDEX_44_HI (13)
+#define FFT_FIR_HALF_BAND_EVEN_TAPS_48_HI (28)
+#define FFT_FIR_HALF_BAND_CENTER_INDEX_48_HI (13)
 
 typedef struct
 {
@@ -67,98 +67,98 @@ typedef struct
     const float *odd_taps;
 } CORE1_POLY_PROFILE;
 
-extern const float fft_fir_head_in44100_out176400_pb20000_sb28000_u4_hp[];
-extern const float fft_fir_tail_in44100_out176400_pb20000_sb28000_u4_hp[];
-extern const float fft_fir_head_in44100_out176400_pb20000_sb28000_u4_lp[];
-extern const float fft_fir_tail_in44100_out176400_pb20000_sb28000_u4_lp[];
-extern const float fft_fir_head_in88200_out176400_pb20000_sb44100_u2_hp[];
-extern const float fft_fir_tail_in88200_out176400_pb20000_sb44100_u2_hp[];
-extern const float fft_fir_head_in88200_out176400_pb20000_sb44100_u2_lp[];
-extern const float fft_fir_tail_in88200_out176400_pb20000_sb44100_u2_lp[];
-extern const float fft_fir_head_in48000_out192000_pb20000_sb28000_u4_hp[];
-extern const float fft_fir_tail_in48000_out192000_pb20000_sb28000_u4_hp[];
-extern const float fft_fir_head_in48000_out192000_pb20000_sb28000_u4_lp[];
-extern const float fft_fir_tail_in48000_out192000_pb20000_sb28000_u4_lp[];
-extern const float fft_fir_head_in96000_out192000_pb20000_sb48000_u2_hp[];
-extern const float fft_fir_tail_in96000_out192000_pb20000_sb48000_u2_hp[];
-extern const float fft_fir_head_in96000_out192000_pb20000_sb48000_u2_lp[];
-extern const float fft_fir_tail_in96000_out192000_pb20000_sb48000_u2_lp[];
-extern const float fft_fir_head_in44100_out352800_pb20000_sb28000_u8_hp[];
-extern const float fft_fir_tail_in44100_out352800_pb20000_sb28000_u8_hp[];
-extern const float fft_fir_head_in44100_out352800_pb20000_sb28000_u8_lp[];
-extern const float fft_fir_tail_in44100_out352800_pb20000_sb28000_u8_lp[];
-extern const float fft_fir_head_in88200_out352800_pb20000_sb28000_u4_tag22050_hp[];
-extern const float fft_fir_tail_in88200_out352800_pb20000_sb28000_u4_tag22050_hp[];
-extern const float fft_fir_head_in88200_out352800_pb20000_sb28000_u4_tag22050_lp[];
-extern const float fft_fir_tail_in88200_out352800_pb20000_sb28000_u4_tag22050_lp[];
-extern const float fft_fir_head_in88200_out352800_pb20000_sb28000_u4_tag24000_hp[];
-extern const float fft_fir_tail_in88200_out352800_pb20000_sb28000_u4_tag24000_hp[];
-extern const float fft_fir_head_in88200_out352800_pb20000_sb28000_u4_tag24000_lp[];
-extern const float fft_fir_tail_in88200_out352800_pb20000_sb28000_u4_tag24000_lp[];
-extern const float fft_fir_head_in176400_out352800_pb20000_sb88200_u2_hp[];
-extern const float fft_fir_tail_in176400_out352800_pb20000_sb88200_u2_hp[];
-extern const float fft_fir_head_in176400_out352800_pb20000_sb88200_u2_lp[];
-extern const float fft_fir_tail_in176400_out352800_pb20000_sb88200_u2_lp[];
-extern const float fft_fir_head_in48000_out384000_pb20000_sb28000_u8_hp[];
-extern const float fft_fir_tail_in48000_out384000_pb20000_sb28000_u8_hp[];
-extern const float fft_fir_head_in48000_out384000_pb20000_sb28000_u8_lp[];
-extern const float fft_fir_tail_in48000_out384000_pb20000_sb28000_u8_lp[];
-extern const float fft_fir_head_in96000_out384000_pb20000_sb28000_u4_hp[];
-extern const float fft_fir_tail_in96000_out384000_pb20000_sb28000_u4_hp[];
-extern const float fft_fir_head_in96000_out384000_pb20000_sb28000_u4_lp[];
-extern const float fft_fir_tail_in96000_out384000_pb20000_sb28000_u4_lp[];
-extern const float fft_fir_head_in192000_out384000_pb20000_sb96000_u2_hp[];
-extern const float fft_fir_tail_in192000_out384000_pb20000_sb96000_u2_hp[];
-extern const float fft_fir_head_in192000_out384000_pb20000_sb96000_u2_lp[];
-extern const float fft_fir_tail_in192000_out384000_pb20000_sb96000_u2_lp[];
-extern const float fft_fir_head_core1_in44100_out176400_pb20000_sb79380_u4_hp[];
-extern const float fft_fir_tail_core1_in44100_out176400_pb20000_sb79380_u4_hp[];
-extern const float fft_fir_head_core1_in44100_out176400_pb20000_sb79380_u4_lp[];
-extern const float fft_fir_tail_core1_in44100_out176400_pb20000_sb79380_u4_lp[];
-extern const float fft_fir_head_core1_in88200_out176400_pb20000_sb79380_u2_hp[];
-extern const float fft_fir_tail_core1_in88200_out176400_pb20000_sb79380_u2_hp[];
-extern const float fft_fir_head_core1_in88200_out176400_pb20000_sb79380_u2_lp[];
-extern const float fft_fir_tail_core1_in88200_out176400_pb20000_sb79380_u2_lp[];
-extern const float fft_fir_head_core1_in48000_out192000_pb20000_sb86400_u4_hp[];
-extern const float fft_fir_tail_core1_in48000_out192000_pb20000_sb86400_u4_hp[];
-extern const float fft_fir_head_core1_in48000_out192000_pb20000_sb86400_u4_lp[];
-extern const float fft_fir_tail_core1_in48000_out192000_pb20000_sb86400_u4_lp[];
-extern const float fft_fir_head_core1_in96000_out192000_pb20000_sb86400_u2_hp[];
-extern const float fft_fir_tail_core1_in96000_out192000_pb20000_sb86400_u2_hp[];
-extern const float fft_fir_head_core1_in96000_out192000_pb20000_sb86400_u2_lp[];
-extern const float fft_fir_tail_core1_in96000_out192000_pb20000_sb86400_u2_lp[];
-extern const float fft_fir_head_core1_in44100_out352800_pb20000_sb158760_u8_hp[];
-extern const float fft_fir_tail_core1_in44100_out352800_pb20000_sb158760_u8_hp[];
-extern const float fft_fir_head_core1_in44100_out352800_pb20000_sb158760_u8_lp[];
-extern const float fft_fir_tail_core1_in44100_out352800_pb20000_sb158760_u8_lp[];
-extern const float fft_fir_head_core1_in88200_out352800_pb20000_sb158760_u4_hp[];
-extern const float fft_fir_tail_core1_in88200_out352800_pb20000_sb158760_u4_hp[];
-extern const float fft_fir_head_core1_in88200_out352800_pb20000_sb158760_u4_lp[];
-extern const float fft_fir_tail_core1_in88200_out352800_pb20000_sb158760_u4_lp[];
-extern const float fft_fir_head_core1_in176400_out352800_pb20000_sb158760_u2_hp[];
-extern const float fft_fir_tail_core1_in176400_out352800_pb20000_sb158760_u2_hp[];
-extern const float fft_fir_head_core1_in176400_out352800_pb20000_sb158760_u2_lp[];
-extern const float fft_fir_tail_core1_in176400_out352800_pb20000_sb158760_u2_lp[];
-extern const float fft_fir_head_core1_in48000_out384000_pb20000_sb172800_u8_hp[];
-extern const float fft_fir_tail_core1_in48000_out384000_pb20000_sb172800_u8_hp[];
-extern const float fft_fir_head_core1_in48000_out384000_pb20000_sb172800_u8_lp[];
-extern const float fft_fir_tail_core1_in48000_out384000_pb20000_sb172800_u8_lp[];
-extern const float fft_fir_head_core1_in96000_out384000_pb20000_sb172800_u4_hp[];
-extern const float fft_fir_tail_core1_in96000_out384000_pb20000_sb172800_u4_hp[];
-extern const float fft_fir_head_core1_in96000_out384000_pb20000_sb172800_u4_lp[];
-extern const float fft_fir_tail_core1_in96000_out384000_pb20000_sb172800_u4_lp[];
-extern const float fft_fir_head_core1_in192000_out384000_pb20000_sb172800_u2_hp[];
-extern const float fft_fir_tail_core1_in192000_out384000_pb20000_sb172800_u2_hp[];
-extern const float fft_fir_head_core1_in192000_out384000_pb20000_sb172800_u2_lp[];
-extern const float fft_fir_tail_core1_in192000_out384000_pb20000_sb172800_u2_lp[];
-extern const float fft_fir_head_core1_in352800_out705600_pb20000_sb317520_u2_hp[];
-extern const float fft_fir_tail_core1_in352800_out705600_pb20000_sb317520_u2_hp[];
-extern const float fft_fir_head_core1_in352800_out705600_pb20000_sb317520_u2_lp[];
-extern const float fft_fir_tail_core1_in352800_out705600_pb20000_sb317520_u2_lp[];
-extern const float fft_fir_head_core1_in384000_out768000_pb20000_sb345600_u2_hp[];
-extern const float fft_fir_tail_core1_in384000_out768000_pb20000_sb345600_u2_hp[];
-extern const float fft_fir_head_core1_in384000_out768000_pb20000_sb345600_u2_lp[];
-extern const float fft_fir_tail_core1_in384000_out768000_pb20000_sb345600_u2_lp[];
+extern const float fft_fir_head_in44100_to_176400_u4_hp[];
+extern const float fft_fir_tail_in44100_to_176400_u4_hp[];
+extern const float fft_fir_head_in44100_to_176400_u4_lp[];
+extern const float fft_fir_tail_in44100_to_176400_u4_lp[];
+extern const float fft_fir_head_in88200_to_176400_u2_hp[];
+extern const float fft_fir_tail_in88200_to_176400_u2_hp[];
+extern const float fft_fir_head_in88200_to_176400_u2_lp[];
+extern const float fft_fir_tail_in88200_to_176400_u2_lp[];
+extern const float fft_fir_head_in48000_to_192000_u4_hp[];
+extern const float fft_fir_tail_in48000_to_192000_u4_hp[];
+extern const float fft_fir_head_in48000_to_192000_u4_lp[];
+extern const float fft_fir_tail_in48000_to_192000_u4_lp[];
+extern const float fft_fir_head_in96000_to_192000_u2_hp[];
+extern const float fft_fir_tail_in96000_to_192000_u2_hp[];
+extern const float fft_fir_head_in96000_to_192000_u2_lp[];
+extern const float fft_fir_tail_in96000_to_192000_u2_lp[];
+extern const float fft_fir_head_in44100_to_352800_u8_hp[];
+extern const float fft_fir_tail_in44100_to_352800_u8_hp[];
+extern const float fft_fir_head_in44100_to_352800_u8_lp[];
+extern const float fft_fir_tail_in44100_to_352800_u8_lp[];
+extern const float fft_fir_head_in88200_to_352800_u4_tag22050_hp[];
+extern const float fft_fir_tail_in88200_to_352800_u4_tag22050_hp[];
+extern const float fft_fir_head_in88200_to_352800_u4_tag22050_lp[];
+extern const float fft_fir_tail_in88200_to_352800_u4_tag22050_lp[];
+extern const float fft_fir_head_in88200_to_352800_u4_tag24000_hp[];
+extern const float fft_fir_tail_in88200_to_352800_u4_tag24000_hp[];
+extern const float fft_fir_head_in88200_to_352800_u4_tag24000_lp[];
+extern const float fft_fir_tail_in88200_to_352800_u4_tag24000_lp[];
+extern const float fft_fir_head_in176400_to_352800_u2_hp[];
+extern const float fft_fir_tail_in176400_to_352800_u2_hp[];
+extern const float fft_fir_head_in176400_to_352800_u2_lp[];
+extern const float fft_fir_tail_in176400_to_352800_u2_lp[];
+extern const float fft_fir_head_in48000_to_384000_u8_hp[];
+extern const float fft_fir_tail_in48000_to_384000_u8_hp[];
+extern const float fft_fir_head_in48000_to_384000_u8_lp[];
+extern const float fft_fir_tail_in48000_to_384000_u8_lp[];
+extern const float fft_fir_head_in96000_to_384000_u4_hp[];
+extern const float fft_fir_tail_in96000_to_384000_u4_hp[];
+extern const float fft_fir_head_in96000_to_384000_u4_lp[];
+extern const float fft_fir_tail_in96000_to_384000_u4_lp[];
+extern const float fft_fir_head_in192000_to_384000_u2_hp[];
+extern const float fft_fir_tail_in192000_to_384000_u2_hp[];
+extern const float fft_fir_head_in192000_to_384000_u2_lp[];
+extern const float fft_fir_tail_in192000_to_384000_u2_lp[];
+extern const float fft_fir_head_core1_in44100_to_176400_u4_hp[];
+extern const float fft_fir_tail_core1_in44100_to_176400_u4_hp[];
+extern const float fft_fir_head_core1_in44100_to_176400_u4_lp[];
+extern const float fft_fir_tail_core1_in44100_to_176400_u4_lp[];
+extern const float fft_fir_head_core1_in88200_to_176400_u2_hp[];
+extern const float fft_fir_tail_core1_in88200_to_176400_u2_hp[];
+extern const float fft_fir_head_core1_in88200_to_176400_u2_lp[];
+extern const float fft_fir_tail_core1_in88200_to_176400_u2_lp[];
+extern const float fft_fir_head_core1_in48000_to_192000_u4_hp[];
+extern const float fft_fir_tail_core1_in48000_to_192000_u4_hp[];
+extern const float fft_fir_head_core1_in48000_to_192000_u4_lp[];
+extern const float fft_fir_tail_core1_in48000_to_192000_u4_lp[];
+extern const float fft_fir_head_core1_in96000_to_192000_u2_hp[];
+extern const float fft_fir_tail_core1_in96000_to_192000_u2_hp[];
+extern const float fft_fir_head_core1_in96000_to_192000_u2_lp[];
+extern const float fft_fir_tail_core1_in96000_to_192000_u2_lp[];
+extern const float fft_fir_head_core1_in44100_to_352800_u8_hp[];
+extern const float fft_fir_tail_core1_in44100_to_352800_u8_hp[];
+extern const float fft_fir_head_core1_in44100_to_352800_u8_lp[];
+extern const float fft_fir_tail_core1_in44100_to_352800_u8_lp[];
+extern const float fft_fir_head_core1_in88200_to_352800_u4_hp[];
+extern const float fft_fir_tail_core1_in88200_to_352800_u4_hp[];
+extern const float fft_fir_head_core1_in88200_to_352800_u4_lp[];
+extern const float fft_fir_tail_core1_in88200_to_352800_u4_lp[];
+extern const float fft_fir_head_core1_in176400_to_352800_u2_hp[];
+extern const float fft_fir_tail_core1_in176400_to_352800_u2_hp[];
+extern const float fft_fir_head_core1_in176400_to_352800_u2_lp[];
+extern const float fft_fir_tail_core1_in176400_to_352800_u2_lp[];
+extern const float fft_fir_head_core1_in48000_to_384000_u8_hp[];
+extern const float fft_fir_tail_core1_in48000_to_384000_u8_hp[];
+extern const float fft_fir_head_core1_in48000_to_384000_u8_lp[];
+extern const float fft_fir_tail_core1_in48000_to_384000_u8_lp[];
+extern const float fft_fir_head_core1_in96000_to_384000_u4_hp[];
+extern const float fft_fir_tail_core1_in96000_to_384000_u4_hp[];
+extern const float fft_fir_head_core1_in96000_to_384000_u4_lp[];
+extern const float fft_fir_tail_core1_in96000_to_384000_u4_lp[];
+extern const float fft_fir_head_core1_in192000_to_384000_u2_hp[];
+extern const float fft_fir_tail_core1_in192000_to_384000_u2_hp[];
+extern const float fft_fir_head_core1_in192000_to_384000_u2_lp[];
+extern const float fft_fir_tail_core1_in192000_to_384000_u2_lp[];
+extern const float fft_fir_head_core1_in352800_to_705600_u2_hp[];
+extern const float fft_fir_tail_core1_in352800_to_705600_u2_hp[];
+extern const float fft_fir_head_core1_in352800_to_705600_u2_lp[];
+extern const float fft_fir_tail_core1_in352800_to_705600_u2_lp[];
+extern const float fft_fir_head_core1_in384000_to_768000_u2_hp[];
+extern const float fft_fir_tail_core1_in384000_to_768000_u2_hp[];
+extern const float fft_fir_head_core1_in384000_to_768000_u2_lp[];
+extern const float fft_fir_tail_core1_in384000_to_768000_u2_lp[];
 
 extern const float fft_fir_halfband_even_44[];
 extern const float fft_fir_halfband_even_48[];
@@ -169,88 +169,88 @@ extern const float fft_fir_halfband_even_48_hi[];
 extern const float fft_fir_halfband_center_44_hi;
 extern const float fft_fir_halfband_center_48_hi;
 
-extern const float core1_poly_in88200_out176400_pb20000_sb79380_u2_hp_even[];
-extern const float core1_poly_in88200_out176400_pb20000_sb79380_u2_hp_odd[];
-extern const float core1_poly_in88200_out176400_pb20000_sb79380_u2_lp_even[];
-extern const float core1_poly_in88200_out176400_pb20000_sb79380_u2_lp_odd[];
-extern const float core1_poly_in96000_out192000_pb20000_sb86400_u2_hp_even[];
-extern const float core1_poly_in96000_out192000_pb20000_sb86400_u2_hp_odd[];
-extern const float core1_poly_in96000_out192000_pb20000_sb86400_u2_lp_even[];
-extern const float core1_poly_in96000_out192000_pb20000_sb86400_u2_lp_odd[];
-extern const float core1_poly_in176400_out352800_pb20000_sb158760_u2_hp_even[];
-extern const float core1_poly_in176400_out352800_pb20000_sb158760_u2_hp_odd[];
-extern const float core1_poly_in176400_out352800_pb20000_sb158760_u2_lp_even[];
-extern const float core1_poly_in176400_out352800_pb20000_sb158760_u2_lp_odd[];
-extern const float core1_poly_in192000_out384000_pb20000_sb172800_u2_hp_even[];
-extern const float core1_poly_in192000_out384000_pb20000_sb172800_u2_hp_odd[];
-extern const float core1_poly_in192000_out384000_pb20000_sb172800_u2_lp_even[];
-extern const float core1_poly_in192000_out384000_pb20000_sb172800_u2_lp_odd[];
-extern const float core1_poly_in352800_out705600_pb20000_sb317520_u2_hp_even[];
-extern const float core1_poly_in352800_out705600_pb20000_sb317520_u2_hp_odd[];
-extern const float core1_poly_in352800_out705600_pb20000_sb317520_u2_lp_even[];
-extern const float core1_poly_in352800_out705600_pb20000_sb317520_u2_lp_odd[];
-extern const float core1_poly_in384000_out768000_pb20000_sb345600_u2_hp_even[];
-extern const float core1_poly_in384000_out768000_pb20000_sb345600_u2_hp_odd[];
-extern const float core1_poly_in384000_out768000_pb20000_sb345600_u2_lp_even[];
-extern const float core1_poly_in384000_out768000_pb20000_sb345600_u2_lp_odd[];
+extern const float core1_poly_in88200_to_176400_u2_hp_even[];
+extern const float core1_poly_in88200_to_176400_u2_hp_odd[];
+extern const float core1_poly_in88200_to_176400_u2_lp_even[];
+extern const float core1_poly_in88200_to_176400_u2_lp_odd[];
+extern const float core1_poly_in96000_to_192000_u2_hp_even[];
+extern const float core1_poly_in96000_to_192000_u2_hp_odd[];
+extern const float core1_poly_in96000_to_192000_u2_lp_even[];
+extern const float core1_poly_in96000_to_192000_u2_lp_odd[];
+extern const float core1_poly_in176400_to_352800_u2_hp_even[];
+extern const float core1_poly_in176400_to_352800_u2_hp_odd[];
+extern const float core1_poly_in176400_to_352800_u2_lp_even[];
+extern const float core1_poly_in176400_to_352800_u2_lp_odd[];
+extern const float core1_poly_in192000_to_384000_u2_hp_even[];
+extern const float core1_poly_in192000_to_384000_u2_hp_odd[];
+extern const float core1_poly_in192000_to_384000_u2_lp_even[];
+extern const float core1_poly_in192000_to_384000_u2_lp_odd[];
+extern const float core1_poly_in352800_to_705600_u2_hp_even[];
+extern const float core1_poly_in352800_to_705600_u2_hp_odd[];
+extern const float core1_poly_in352800_to_705600_u2_lp_even[];
+extern const float core1_poly_in352800_to_705600_u2_lp_odd[];
+extern const float core1_poly_in384000_to_768000_u2_hp_even[];
+extern const float core1_poly_in384000_to_768000_u2_hp_odd[];
+extern const float core1_poly_in384000_to_768000_u2_lp_even[];
+extern const float core1_poly_in384000_to_768000_u2_lp_odd[];
 
-extern const FFT_FIR_PROFILE fft_fir_profile_in44100_out176400_pb20000_sb28000_u4_hp;
-extern const FFT_FIR_PROFILE fft_fir_profile_in44100_out176400_pb20000_sb28000_u4_lp;
-extern const FFT_FIR_PROFILE fft_fir_profile_in88200_out176400_pb20000_sb44100_u2_hp;
-extern const FFT_FIR_PROFILE fft_fir_profile_in88200_out176400_pb20000_sb44100_u2_lp;
-extern const FFT_FIR_PROFILE fft_fir_profile_in48000_out192000_pb20000_sb28000_u4_hp;
-extern const FFT_FIR_PROFILE fft_fir_profile_in48000_out192000_pb20000_sb28000_u4_lp;
-extern const FFT_FIR_PROFILE fft_fir_profile_in96000_out192000_pb20000_sb48000_u2_hp;
-extern const FFT_FIR_PROFILE fft_fir_profile_in96000_out192000_pb20000_sb48000_u2_lp;
-extern const FFT_FIR_PROFILE fft_fir_profile_in44100_out352800_pb20000_sb28000_u8_hp;
-extern const FFT_FIR_PROFILE fft_fir_profile_in44100_out352800_pb20000_sb28000_u8_lp;
-extern const FFT_FIR_PROFILE fft_fir_profile_in88200_out352800_pb20000_sb28000_u4_tag22050_hp;
-extern const FFT_FIR_PROFILE fft_fir_profile_in88200_out352800_pb20000_sb28000_u4_tag22050_lp;
-extern const FFT_FIR_PROFILE fft_fir_profile_in88200_out352800_pb20000_sb28000_u4_tag24000_hp;
-extern const FFT_FIR_PROFILE fft_fir_profile_in88200_out352800_pb20000_sb28000_u4_tag24000_lp;
-extern const FFT_FIR_PROFILE fft_fir_profile_in176400_out352800_pb20000_sb88200_u2_hp;
-extern const FFT_FIR_PROFILE fft_fir_profile_in176400_out352800_pb20000_sb88200_u2_lp;
-extern const FFT_FIR_PROFILE fft_fir_profile_in48000_out384000_pb20000_sb28000_u8_hp;
-extern const FFT_FIR_PROFILE fft_fir_profile_in48000_out384000_pb20000_sb28000_u8_lp;
-extern const FFT_FIR_PROFILE fft_fir_profile_in96000_out384000_pb20000_sb28000_u4_hp;
-extern const FFT_FIR_PROFILE fft_fir_profile_in96000_out384000_pb20000_sb28000_u4_lp;
-extern const FFT_FIR_PROFILE fft_fir_profile_in192000_out384000_pb20000_sb96000_u2_hp;
-extern const FFT_FIR_PROFILE fft_fir_profile_in192000_out384000_pb20000_sb96000_u2_lp;
-extern const FFT_FIR_PROFILE fft_fir_profile_core1_in44100_out176400_pb20000_sb79380_u4_hp;
-extern const FFT_FIR_PROFILE fft_fir_profile_core1_in44100_out176400_pb20000_sb79380_u4_lp;
-extern const FFT_FIR_PROFILE fft_fir_profile_core1_in88200_out176400_pb20000_sb79380_u2_hp;
-extern const FFT_FIR_PROFILE fft_fir_profile_core1_in88200_out176400_pb20000_sb79380_u2_lp;
-extern const FFT_FIR_PROFILE fft_fir_profile_core1_in48000_out192000_pb20000_sb86400_u4_hp;
-extern const FFT_FIR_PROFILE fft_fir_profile_core1_in48000_out192000_pb20000_sb86400_u4_lp;
-extern const FFT_FIR_PROFILE fft_fir_profile_core1_in96000_out192000_pb20000_sb86400_u2_hp;
-extern const FFT_FIR_PROFILE fft_fir_profile_core1_in96000_out192000_pb20000_sb86400_u2_lp;
-extern const FFT_FIR_PROFILE fft_fir_profile_core1_in44100_out352800_pb20000_sb158760_u8_hp;
-extern const FFT_FIR_PROFILE fft_fir_profile_core1_in44100_out352800_pb20000_sb158760_u8_lp;
-extern const FFT_FIR_PROFILE fft_fir_profile_core1_in88200_out352800_pb20000_sb158760_u4_hp;
-extern const FFT_FIR_PROFILE fft_fir_profile_core1_in88200_out352800_pb20000_sb158760_u4_lp;
-extern const FFT_FIR_PROFILE fft_fir_profile_core1_in176400_out352800_pb20000_sb158760_u2_hp;
-extern const FFT_FIR_PROFILE fft_fir_profile_core1_in176400_out352800_pb20000_sb158760_u2_lp;
-extern const FFT_FIR_PROFILE fft_fir_profile_core1_in48000_out384000_pb20000_sb172800_u8_hp;
-extern const FFT_FIR_PROFILE fft_fir_profile_core1_in48000_out384000_pb20000_sb172800_u8_lp;
-extern const FFT_FIR_PROFILE fft_fir_profile_core1_in96000_out384000_pb20000_sb172800_u4_hp;
-extern const FFT_FIR_PROFILE fft_fir_profile_core1_in96000_out384000_pb20000_sb172800_u4_lp;
-extern const FFT_FIR_PROFILE fft_fir_profile_core1_in192000_out384000_pb20000_sb172800_u2_hp;
-extern const FFT_FIR_PROFILE fft_fir_profile_core1_in192000_out384000_pb20000_sb172800_u2_lp;
-extern const FFT_FIR_PROFILE fft_fir_profile_core1_in352800_out705600_pb20000_sb317520_u2_hp;
-extern const FFT_FIR_PROFILE fft_fir_profile_core1_in352800_out705600_pb20000_sb317520_u2_lp;
-extern const FFT_FIR_PROFILE fft_fir_profile_core1_in384000_out768000_pb20000_sb345600_u2_hp;
-extern const FFT_FIR_PROFILE fft_fir_profile_core1_in384000_out768000_pb20000_sb345600_u2_lp;
-extern const CORE1_POLY_PROFILE core1_poly_in88200_out176400_pb20000_sb79380_u2_hp;
-extern const CORE1_POLY_PROFILE core1_poly_in88200_out176400_pb20000_sb79380_u2_lp;
-extern const CORE1_POLY_PROFILE core1_poly_in96000_out192000_pb20000_sb86400_u2_hp;
-extern const CORE1_POLY_PROFILE core1_poly_in96000_out192000_pb20000_sb86400_u2_lp;
-extern const CORE1_POLY_PROFILE core1_poly_in176400_out352800_pb20000_sb158760_u2_hp;
-extern const CORE1_POLY_PROFILE core1_poly_in176400_out352800_pb20000_sb158760_u2_lp;
-extern const CORE1_POLY_PROFILE core1_poly_in192000_out384000_pb20000_sb172800_u2_hp;
-extern const CORE1_POLY_PROFILE core1_poly_in192000_out384000_pb20000_sb172800_u2_lp;
-extern const CORE1_POLY_PROFILE core1_poly_in352800_out705600_pb20000_sb317520_u2_hp;
-extern const CORE1_POLY_PROFILE core1_poly_in352800_out705600_pb20000_sb317520_u2_lp;
-extern const CORE1_POLY_PROFILE core1_poly_in384000_out768000_pb20000_sb345600_u2_hp;
-extern const CORE1_POLY_PROFILE core1_poly_in384000_out768000_pb20000_sb345600_u2_lp;
+extern const FFT_FIR_PROFILE fft_fir_profile_in44100_to_176400_u4_hp;
+extern const FFT_FIR_PROFILE fft_fir_profile_in44100_to_176400_u4_lp;
+extern const FFT_FIR_PROFILE fft_fir_profile_in88200_to_176400_u2_hp;
+extern const FFT_FIR_PROFILE fft_fir_profile_in88200_to_176400_u2_lp;
+extern const FFT_FIR_PROFILE fft_fir_profile_in48000_to_192000_u4_hp;
+extern const FFT_FIR_PROFILE fft_fir_profile_in48000_to_192000_u4_lp;
+extern const FFT_FIR_PROFILE fft_fir_profile_in96000_to_192000_u2_hp;
+extern const FFT_FIR_PROFILE fft_fir_profile_in96000_to_192000_u2_lp;
+extern const FFT_FIR_PROFILE fft_fir_profile_in44100_to_352800_u8_hp;
+extern const FFT_FIR_PROFILE fft_fir_profile_in44100_to_352800_u8_lp;
+extern const FFT_FIR_PROFILE fft_fir_profile_in88200_to_352800_u4_tag22050_hp;
+extern const FFT_FIR_PROFILE fft_fir_profile_in88200_to_352800_u4_tag22050_lp;
+extern const FFT_FIR_PROFILE fft_fir_profile_in88200_to_352800_u4_tag24000_hp;
+extern const FFT_FIR_PROFILE fft_fir_profile_in88200_to_352800_u4_tag24000_lp;
+extern const FFT_FIR_PROFILE fft_fir_profile_in176400_to_352800_u2_hp;
+extern const FFT_FIR_PROFILE fft_fir_profile_in176400_to_352800_u2_lp;
+extern const FFT_FIR_PROFILE fft_fir_profile_in48000_to_384000_u8_hp;
+extern const FFT_FIR_PROFILE fft_fir_profile_in48000_to_384000_u8_lp;
+extern const FFT_FIR_PROFILE fft_fir_profile_in96000_to_384000_u4_hp;
+extern const FFT_FIR_PROFILE fft_fir_profile_in96000_to_384000_u4_lp;
+extern const FFT_FIR_PROFILE fft_fir_profile_in192000_to_384000_u2_hp;
+extern const FFT_FIR_PROFILE fft_fir_profile_in192000_to_384000_u2_lp;
+extern const FFT_FIR_PROFILE fft_fir_profile_core1_in44100_to_176400_u4_hp;
+extern const FFT_FIR_PROFILE fft_fir_profile_core1_in44100_to_176400_u4_lp;
+extern const FFT_FIR_PROFILE fft_fir_profile_core1_in88200_to_176400_u2_hp;
+extern const FFT_FIR_PROFILE fft_fir_profile_core1_in88200_to_176400_u2_lp;
+extern const FFT_FIR_PROFILE fft_fir_profile_core1_in48000_to_192000_u4_hp;
+extern const FFT_FIR_PROFILE fft_fir_profile_core1_in48000_to_192000_u4_lp;
+extern const FFT_FIR_PROFILE fft_fir_profile_core1_in96000_to_192000_u2_hp;
+extern const FFT_FIR_PROFILE fft_fir_profile_core1_in96000_to_192000_u2_lp;
+extern const FFT_FIR_PROFILE fft_fir_profile_core1_in44100_to_352800_u8_hp;
+extern const FFT_FIR_PROFILE fft_fir_profile_core1_in44100_to_352800_u8_lp;
+extern const FFT_FIR_PROFILE fft_fir_profile_core1_in88200_to_352800_u4_hp;
+extern const FFT_FIR_PROFILE fft_fir_profile_core1_in88200_to_352800_u4_lp;
+extern const FFT_FIR_PROFILE fft_fir_profile_core1_in176400_to_352800_u2_hp;
+extern const FFT_FIR_PROFILE fft_fir_profile_core1_in176400_to_352800_u2_lp;
+extern const FFT_FIR_PROFILE fft_fir_profile_core1_in48000_to_384000_u8_hp;
+extern const FFT_FIR_PROFILE fft_fir_profile_core1_in48000_to_384000_u8_lp;
+extern const FFT_FIR_PROFILE fft_fir_profile_core1_in96000_to_384000_u4_hp;
+extern const FFT_FIR_PROFILE fft_fir_profile_core1_in96000_to_384000_u4_lp;
+extern const FFT_FIR_PROFILE fft_fir_profile_core1_in192000_to_384000_u2_hp;
+extern const FFT_FIR_PROFILE fft_fir_profile_core1_in192000_to_384000_u2_lp;
+extern const FFT_FIR_PROFILE fft_fir_profile_core1_in352800_to_705600_u2_hp;
+extern const FFT_FIR_PROFILE fft_fir_profile_core1_in352800_to_705600_u2_lp;
+extern const FFT_FIR_PROFILE fft_fir_profile_core1_in384000_to_768000_u2_hp;
+extern const FFT_FIR_PROFILE fft_fir_profile_core1_in384000_to_768000_u2_lp;
+extern const CORE1_POLY_PROFILE core1_poly_in88200_to_176400_u2_hp;
+extern const CORE1_POLY_PROFILE core1_poly_in88200_to_176400_u2_lp;
+extern const CORE1_POLY_PROFILE core1_poly_in96000_to_192000_u2_hp;
+extern const CORE1_POLY_PROFILE core1_poly_in96000_to_192000_u2_lp;
+extern const CORE1_POLY_PROFILE core1_poly_in176400_to_352800_u2_hp;
+extern const CORE1_POLY_PROFILE core1_poly_in176400_to_352800_u2_lp;
+extern const CORE1_POLY_PROFILE core1_poly_in192000_to_384000_u2_hp;
+extern const CORE1_POLY_PROFILE core1_poly_in192000_to_384000_u2_lp;
+extern const CORE1_POLY_PROFILE core1_poly_in352800_to_705600_u2_hp;
+extern const CORE1_POLY_PROFILE core1_poly_in352800_to_705600_u2_lp;
+extern const CORE1_POLY_PROFILE core1_poly_in384000_to_768000_u2_hp;
+extern const CORE1_POLY_PROFILE core1_poly_in384000_to_768000_u2_lp;
 
 #endif
