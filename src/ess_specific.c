@@ -133,7 +133,7 @@ void ess_dac_i2c_setup(void)
 		i2c_write_blocking(I2C_PORT, I2C_ESS_DAC_ADDR >> 1, i2cbuf, 2, true);
 		sleep_ms(1);
 
-		if (output_fs > 300000)
+		if ((output_fs > 300000) && (output_fs < 700000))
 		{
 			// 内蔵アップサンプリングを使用しない
 			i2cbuf[0] = 0x5A; // Resister 90: DAC_PATH_CONFIG
@@ -149,6 +149,21 @@ void ess_dac_i2c_setup(void)
 			i2c_write_blocking(I2C_PORT, I2C_ESS_DAC_ADDR >> 1, i2cbuf, 2, true);
 			sleep_ms(1);
 		}
+
+		// チャネル割り当て
+		uint8_t first_ch = 0;
+		uint8_t second_ch = 1;
+		if (LR_SWAP)
+		{
+			first_ch = 1;
+			second_ch = 0;
+		}
+		i2cbuf[0] = 0x40; // Resister 64: TDM_CH1_CONFIG
+		i2cbuf[1] = first_ch; // TDM CH1 enable, TDM_CH1 slot0
+		i2c_write_blocking(I2C_PORT, I2C_ESS_DAC_ADDR >> 1, i2cbuf, 2, true);
+		i2cbuf[0] = 0x41; // Resister 65: TDM_CH2_CONFIG
+		i2cbuf[1] = second_ch; // TDM CH2 enable, TDM_CH2 slot1
+		i2c_write_blocking(I2C_PORT, I2C_ESS_DAC_ADDR >> 1, i2cbuf, 2, true);
 
 		// THD compensation
 		if (ENABLE_ESS_DAC_THD_COMPEN)
@@ -185,9 +200,35 @@ void ess_dac_i2c_setup(void)
 		}
 		else
 		{
-			i2cbuf[0] = 0x0D; // Resister #13 THD Bypass
-			i2cbuf[1] = 0x40; // THD compensation disable
+			i2cbuf[0] = 0x5B; // Resister #91 THD Compensation C2 CH1
+			i2cbuf[1] = 0;
 			i2c_write_blocking(I2C_PORT, I2C_ESS_DAC_ADDR >> 1, i2cbuf, 2, true);
+			i2cbuf[0] = 0x5C; // Resister #92 THD Compensation C2 CH1
+			i2cbuf[1] = 0;
+			i2c_write_blocking(I2C_PORT, I2C_ESS_DAC_ADDR >> 1, i2cbuf, 2, true);
+
+			i2cbuf[0] = 0x5D; // Resister #93 THD Compensation C2 CH2
+			i2cbuf[1] = 0;
+			i2c_write_blocking(I2C_PORT, I2C_ESS_DAC_ADDR >> 1, i2cbuf, 2, true);
+			i2cbuf[0] = 0x5E; // Resister #94 THD Compensation C2 CH2
+			i2cbuf[1] = 0;
+			i2c_write_blocking(I2C_PORT, I2C_ESS_DAC_ADDR >> 1, i2cbuf, 2, true);
+			sleep_ms(1);
+
+			i2cbuf[0] = 0x6B; // Resister #107 THD Compensation C3 CH1
+			i2cbuf[1] = 0;
+			i2c_write_blocking(I2C_PORT, I2C_ESS_DAC_ADDR >> 1, i2cbuf, 2, true);
+			i2cbuf[0] = 0x6C; // Resister #108 THD Compensation C3 CH1
+			i2cbuf[1] = 0;
+			i2c_write_blocking(I2C_PORT, I2C_ESS_DAC_ADDR >> 1, i2cbuf, 2, true);
+
+			i2cbuf[0] = 0x6D; // Resister #109 THD Compensation C3 CH2
+			i2cbuf[1] = 0;
+			i2c_write_blocking(I2C_PORT, I2C_ESS_DAC_ADDR >> 1, i2cbuf, 2, true);
+			i2cbuf[0] = 0x6E; // Resister #110 THD Compensation C3 CH2
+			i2cbuf[1] = 0;
+			i2c_write_blocking(I2C_PORT, I2C_ESS_DAC_ADDR >> 1, i2cbuf, 2, true);
+			sleep_ms(1);
 		}
 
 		// DPLLバンド幅設定
@@ -223,7 +264,7 @@ void ess_dac_i2c_setup(void)
 		i2c_write_blocking(I2C_PORT, I2C_ESS_DAC_ADDR >> 1, i2cbuf, 2, true);
 		sleep_ms(1);
 
-		if (output_fs > 300000)
+		if ((output_fs > 300000) && (output_fs < 700000))
 		{
 			// 内蔵アップサンプリングを使用しない
 			i2cbuf[0] = 0x5A; // Resister 90: DAC_PATH_CONFIG
@@ -241,29 +282,36 @@ void ess_dac_i2c_setup(void)
 		}
 
 		// チャネル割り当て
+		uint8_t first_ch = 0;
+		uint8_t second_ch = 1;
+		if (LR_SWAP)
+		{
+			first_ch = 1;
+			second_ch = 0;
+		}
 		i2cbuf[0] = 0x40; // Resister 64: TDM_CH1_CONFIG
-		i2cbuf[1] = 0x00; // TDM CH1 enable, TDM_CH1 slot0
+		i2cbuf[1] = first_ch; // TDM CH1 enable, TDM_CH1 slot0
 		i2c_write_blocking(I2C_PORT, I2C_ESS_DAC_ADDR >> 1, i2cbuf, 2, true);
 		i2cbuf[0] = 0x41; // Resister 65: TDM_CH2_CONFIG
-		i2cbuf[1] = 0x01; // TDM CH2 enable, TDM_CH2 slot1
+		i2cbuf[1] = second_ch; // TDM CH2 enable, TDM_CH2 slot1
 		i2c_write_blocking(I2C_PORT, I2C_ESS_DAC_ADDR >> 1, i2cbuf, 2, true);
 		i2cbuf[0] = 0x42; // Resister 66: TDM_CH3_CONFIG
-		i2cbuf[1] = 0x00; // TDM CH3 enable, TDM_CH3 slot0
+		i2cbuf[1] = first_ch; // TDM CH3 enable, TDM_CH3 slot0
 		i2c_write_blocking(I2C_PORT, I2C_ESS_DAC_ADDR >> 1, i2cbuf, 2, true);
 		i2cbuf[0] = 0x43; // Resister 67: TDM_CH4_CONFIG
-		i2cbuf[1] = 0x01; // TDM CH4 enable, TDM_CH4 slot1
+		i2cbuf[1] = second_ch; // TDM CH4 enable, TDM_CH4 slot1
 		i2c_write_blocking(I2C_PORT, I2C_ESS_DAC_ADDR >> 1, i2cbuf, 2, true);
 		i2cbuf[0] = 0x44; // Resister 68: TDM_CH5_CONFIG
-		i2cbuf[1] = 0x00; // TDM CH5 enable, TDM_CH5 slot0
+		i2cbuf[1] = first_ch; // TDM CH5 enable, TDM_CH5 slot0
 		i2c_write_blocking(I2C_PORT, I2C_ESS_DAC_ADDR >> 1, i2cbuf, 2, true);
 		i2cbuf[0] = 0x45; // Resister 69: TDM_CH6_CONFIG
-		i2cbuf[1] = 0x01; // TDM CH6 enable, TDM_CH6 slot1
+		i2cbuf[1] = second_ch; // TDM CH6 enable, TDM_CH6 slot1
 		i2c_write_blocking(I2C_PORT, I2C_ESS_DAC_ADDR >> 1, i2cbuf, 2, true);
 		i2cbuf[0] = 0x46; // Resister 70: TDM_CH7_CONFIG
-		i2cbuf[1] = 0x00; // TDM CH7 enable, TDM_CH7 slot0
+		i2cbuf[1] = first_ch; // TDM CH7 enable, TDM_CH7 slot0
 		i2c_write_blocking(I2C_PORT, I2C_ESS_DAC_ADDR >> 1, i2cbuf, 2, true);
 		i2cbuf[0] = 0x47; // Resister 71: TDM_CH8_CONFIG
-		i2cbuf[1] = 0x01; // TDM CH8 enable, TDM_CH8 slot1
+		i2cbuf[1] = second_ch; // TDM CH8 enable, TDM_CH8 slot1
 		i2c_write_blocking(I2C_PORT, I2C_ESS_DAC_ADDR >> 1, i2cbuf, 2, true);
 		sleep_ms(1);
 
