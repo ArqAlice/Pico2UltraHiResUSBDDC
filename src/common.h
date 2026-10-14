@@ -60,20 +60,21 @@
 // Core1 ratio is applied directly (1/2/4 are supported).
 #define CORE1_UP_RATIO_HP (2)
 #define CORE1_UP_RATIO_LP (1)
-#define DEFAULT_GAIN_RATIO (0.75) // Adjust this according to your filter to avoid clipping.
+#define DEFAULT_GAIN_RATIO (0.88) // Adjust this according to your filter to avoid clipping.
 
 // ESS DAC Specific
-#define USE_ESS_DAC (true)
-#define KIND_ESS_DAC (ES9038Q2M)
-#define I2C_ESS_DAC_ADDR (ADDR0_ES9038Q2M)
-#define ENABLE_ES9038Q2M_DEPOP (true)
-#define ENABLE_ESS_DAC_VOLUME (true)
-#define ENABLE_ESS_DAC_THD_COMPEN (true)
+#define USE_ESS_DAC (false)
+#define KIND_ESS_DAC (ESS_DAC_NONE)
+#define I2C_ESS_DAC_ADDR (ADDR0_NONE)
+#define ENABLE_ES9038Q2M_DEPOP (false)
+#define ENABLE_ESS_DAC_VOLUME (false)
+#define ENABLE_ESS_DAC_THD_COMPEN (false)
 #define ENABLE_ESS_THD_COMPEN_VOL_CORR (false)
-#define ESS_THD_COMPEN_C2 (5) // 16bit signed int
-#define ESS_THD_COMPEN_C3 (-155) // 16bit signed int
+#define ESS_THD_COMPEN_C2 (0) // 16bit signed int
+#define ESS_THD_COMPEN_C3 (0) // 16bit signed int
 #define ESS_DPLL_BANDWIDTH (0xA0) // 0~255, 0 is DPLL off
 #define ESS_DPLL_LOCKSPEED (8)   // 0~16
+#define LR_SWAP (false)
 #define TIME_ES9038Q2M_DEPOP_USEC (40000)
 #define DAC_ENABLE_PIN (5)
 
