@@ -288,45 +288,45 @@ const FFT_FIR_PROFILE *fft_fir_core0_select_profile(uint32_t freq, uint16_t rati
     {
     case 44100:
         if (ratio == 8)
-            return is_high_power ? &fft_fir_profile_in44100_out352800_pb20000_sb28000_u8_hp
-                                 : &fft_fir_profile_in44100_out352800_pb20000_sb28000_u8_lp;
+            return is_high_power ? &fft_fir_profile_in44100_to_352800_u8_hp
+                                 : &fft_fir_profile_in44100_to_352800_u8_lp;
         if (ratio == 4)
-            return is_high_power ? &fft_fir_profile_in44100_out176400_pb20000_sb28000_u4_hp
-                                 : &fft_fir_profile_in44100_out176400_pb20000_sb28000_u4_lp;
+            return is_high_power ? &fft_fir_profile_in44100_to_176400_u4_hp
+                                 : &fft_fir_profile_in44100_to_176400_u4_lp;
         break;
     case 88200:
         if (ratio == 4)
-            return is_high_power ? &fft_fir_profile_in88200_out352800_pb20000_sb28000_u4_tag24000_hp
-                                 : &fft_fir_profile_in88200_out352800_pb20000_sb28000_u4_tag24000_lp;
+            return is_high_power ? &fft_fir_profile_in88200_to_352800_u4_tag24000_hp
+                                 : &fft_fir_profile_in88200_to_352800_u4_tag24000_lp;
         if (ratio == 2)
-            return is_high_power ? &fft_fir_profile_in88200_out176400_pb20000_sb44100_u2_hp
-                                 : &fft_fir_profile_in88200_out176400_pb20000_sb44100_u2_lp;
+            return is_high_power ? &fft_fir_profile_in88200_to_176400_u2_hp
+                                 : &fft_fir_profile_in88200_to_176400_u2_lp;
         break;
     case 176400:
         if (ratio == 2)
-            return is_high_power ? &fft_fir_profile_in176400_out352800_pb20000_sb88200_u2_hp
-                                 : &fft_fir_profile_in176400_out352800_pb20000_sb88200_u2_lp;
+            return is_high_power ? &fft_fir_profile_in176400_to_352800_u2_hp
+                                 : &fft_fir_profile_in176400_to_352800_u2_lp;
         break;
     case 48000:
         if (ratio == 8)
-            return is_high_power ? &fft_fir_profile_in48000_out384000_pb20000_sb28000_u8_hp
-                                 : &fft_fir_profile_in48000_out384000_pb20000_sb28000_u8_lp;
+            return is_high_power ? &fft_fir_profile_in48000_to_384000_u8_hp
+                                 : &fft_fir_profile_in48000_to_384000_u8_lp;
         if (ratio == 4)
-            return is_high_power ? &fft_fir_profile_in48000_out192000_pb20000_sb28000_u4_hp
-                                 : &fft_fir_profile_in48000_out192000_pb20000_sb28000_u4_lp;
+            return is_high_power ? &fft_fir_profile_in48000_to_192000_u4_hp
+                                 : &fft_fir_profile_in48000_to_192000_u4_lp;
         break;
     case 96000:
         if (ratio == 4)
-            return is_high_power ? &fft_fir_profile_in96000_out384000_pb20000_sb28000_u4_hp
-                                 : &fft_fir_profile_in96000_out384000_pb20000_sb28000_u4_lp;
+            return is_high_power ? &fft_fir_profile_in96000_to_384000_u4_hp
+                                 : &fft_fir_profile_in96000_to_384000_u4_lp;
         if (ratio == 2)
-            return is_high_power ? &fft_fir_profile_in96000_out192000_pb20000_sb48000_u2_hp
-                                 : &fft_fir_profile_in96000_out192000_pb20000_sb48000_u2_lp;
+            return is_high_power ? &fft_fir_profile_in96000_to_192000_u2_hp
+                                 : &fft_fir_profile_in96000_to_192000_u2_lp;
         break;
     case 192000:
         if (ratio == 2)
-            return is_high_power ? &fft_fir_profile_in192000_out384000_pb20000_sb96000_u2_hp
-                                 : &fft_fir_profile_in192000_out384000_pb20000_sb96000_u2_lp;
+            return is_high_power ? &fft_fir_profile_in192000_to_384000_u2_hp
+                                 : &fft_fir_profile_in192000_to_384000_u2_lp;
         break;
     default:
         break;
