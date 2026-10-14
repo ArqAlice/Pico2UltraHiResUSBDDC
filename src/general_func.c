@@ -79,6 +79,60 @@ void renew_clock(bool is_high_power)
 	// i2c_set_baudrate(I2C_PORT, 104 * 100000);
 }
 
+// Idle clock-down (HIGH_POWER mode only):
+//   enter=true  -> switch to LOW_POWER settings (208MHz / V_CORE_LO 1.05V)
+//   enter=false -> restore the real HIGH_POWER settings for the current family
+// The logical power-mode flag (is_high_power_mode) is intentionally NOT
+// touched here, so upsampling ratios are unchanged; this function must only
+// be called when no audio processing is about to run (idle) or synchronously
+// before processing resumes. Same teardown sequence as renew_clock(): timer +
+// DMA + PIO divider recompute (clk_sys dependent). USB keeps running at all
+// times (clk_usb is independent of sys clock / vreg changes).
+void renew_clock_idle_down(bool enter)
+{
+	// Core0の割り込みタイマを停止
+	cancel_timer0();
+
+	if (enter)
+	{
+		// Downclock: LP settings regardless of the logical mode.
+		switch (audio_state.freq)
+		{
+		case 192000:
+		case 96000:
+		case 48000:
+			set_sys_clock_khz(SYS_CLOCK_KHZ_LP_48K, true);
+			busy_wait_us(100);
+			vreg_set_voltage(V_CORE_LO);
+			busy_wait_us(50);
+			break;
+		case 176400:
+		case 88200:
+		case 44100:
+		default:
+			set_sys_clock_khz(SYS_CLOCK_KHZ_LP_44K, true);
+			busy_wait_us(100);
+			vreg_set_voltage(V_CORE_LO);
+			busy_wait_us(50);
+			break;
+		}
+	}
+	else
+	{
+		// Restore: use the real power mode (HP path: vreg first, then clock).
+		renew_cpu_clock(is_high_power_mode);
+	}
+
+	// Core0の割り込みタイマを再開
+	restart_timer0();
+
+	// DMAをクリア（状態のリコンサイルも兼ねる）
+	dma_stop_and_clear();
+
+	// PIO分周率を再設定（clk_sys 変更に必須）
+	reset_i2s_freq();
+}
+
 // DACを設定するためのI2C
 void setup_I2C(void)
 {

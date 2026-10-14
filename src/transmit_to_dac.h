@@ -39,4 +39,18 @@ extern void dma_stop_and_clear(void);
 extern void pwm_i2s_streaming_rate_change(void);
 extern void set_pwm_isr_1(float period_us);
 
+// Low-power idle support: shared output-running flag + quiesced predicate.
+// enable_output is written by Core1 (dma_tx_start) and read by Core0 (depop timing).
+extern volatile bool enable_output;
+
+// Returns true when output is fully stopped (no frame enabled and no DMA in flight).
+// Used by Core1 to decide it is safe to enter WFI.
+extern bool dma_tx_is_quiesced(void);
+
+// Returns true when playback is running but there is nothing to submit right now
+// (TX ring already full). Core1 may briefly WFI (poll ~CORE1_WFI_PLAY_US) instead
+// of busy-waiting; a chunk is guaranteed to complete within CORE1_PROCESS_US, so
+// re-arming within 250us cannot cause an underrun.
+extern bool dma_tx_no_submit_pending(void);
+
 #endif /* _TRANSMIT_TO_DAC_H_ */

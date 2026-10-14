@@ -31,12 +31,21 @@
 
 // パワー管理
 volatile bool is_high_power_mode = true;
+volatile bool idle_clock_down = false; // HIGH_POWER but LP settings applied (idle)
 
 // 処理タイミング制御用
-#define MILLISEC50 (500000 / TIMER0_US)
+// Housekeeping cadence is enforced by an absolute-time gate inside the ISR
+// (CORE0_HOUSEKEEPING_US), so timer0's period can vary dynamically
+// (CORE0_WFI_PLAY_US while playing / CORE0_WFI_IDLE_US while idle) without
+// changing the 500ms housekeeping behavior.
 
 // タイマー割り込み
 struct repeating_timer timer0; // デジタルフィルタ演算を割り込みでトリガする
+
+// Dynamic timer0 period + activity tracking for low-power idle
+static volatile uint32_t core0_timer_period_us = TIMER0_US;
+static volatile uint64_t last_audio_time_us = 0;
+static volatile uint64_t next_housekeeping_us = 0;
 
 // ring buffer
 RINGBUFFER buffer_ep_Lch;
@@ -64,8 +73,7 @@ volatile absolute_time_t time_start_i2c_transfer = 0;
 // Core1メイン
 extern void core1_main();
 
-// ミュート解除タイミング確認用
-extern bool enable_output;
+// ミュート解除タイミング確認用: enable_output は transmit_to_dac.h で extern(volatile) 宣言済み
 
 void cancel_timer0(void)
 {
@@ -74,7 +82,25 @@ void cancel_timer0(void)
 
 void restart_timer0(void)
 {
-	add_repeating_timer_us(-TIMER0_US, core0_timer_callback, NULL, &timer0);
+	add_repeating_timer_us(-(int64_t)core0_timer_period_us, core0_timer_callback, NULL, &timer0);
+}
+
+// Change timer0's period at runtime. Re-arms the timer only on actual changes,
+// so calling this every loop iteration is cheap.
+// NOTE: cancel/restart must be atomic here. renew_clock() (called from the
+// timer0 ISR and from the USB control ISR) also does cancel_timer0() +
+// restart_timer0(); without this critical section, an ISR firing between our
+// cancel and restart could leave timer0 registered twice and corrupt the
+// repeating-timer list.
+static void core0_timer_set_period(uint32_t period_us)
+{
+	if (period_us == 0 || period_us == core0_timer_period_us)
+		return;
+	uint32_t save = save_and_disable_interrupts();
+	core0_timer_period_us = period_us;
+	cancel_timer0();
+	restart_timer0();
+	restore_interrupts(save);
 }
 
 // アップサンプリング処理のタイミングをセットする
@@ -93,11 +119,13 @@ bool __not_in_flash_func(core0_timer_callback)(struct repeating_timer *t)
 		}
 	}
 
-	// volatile static uint32_t now_playing_old = 0;
-	static volatile int count = 0;
-	count++;
-	if (count >= MILLISEC50)
+	// Absolute-time gate: housekeeping runs every CORE0_HOUSEKEEPING_US
+	// (500ms, identical to the original 2000 ticks * 250us) regardless of
+	// the current dynamic timer period.
+	uint64_t now_us = time_us_64();
+	if ((int64_t)(now_us - next_housekeeping_us) >= 0)
 	{
+		next_housekeeping_us = now_us + CORE0_HOUSEKEEPING_US;
 		// パワーモード切り替え
 		if ((gpio_get(POWER_MODE_SWITCH_PIN) || ALWAYS_HIGH_POWER) && (!ALWAYS_LOW_POWER))
 		{
@@ -155,8 +183,6 @@ bool __not_in_flash_func(core0_timer_callback)(struct repeating_timer *t)
 		}
 
 		now_playing_old = now_playing;
-
-		count = 0;
 	}
 	return true;
 }
@@ -218,11 +244,6 @@ int main(void)
 	// DACチップ制御用I2Cの初期化
 	setup_I2C();
 
-	// DCDCの動作モード、trueでFPWM、falseでPFM
-	gpio_init(DCDC_MODE_PIN);
-	gpio_set_dir(DCDC_MODE_PIN, true);
-	gpio_put(DCDC_MODE_PIN, true);
-
 	// ESS DACを初期化
 	if (USE_ESS_DAC)
 	{
@@ -261,6 +282,39 @@ int main(void)
 	{
 		// watchdog_update();
 
+		// Idle clock-down state machine (HIGH_POWER mode only).
+		// MUST run before upsampling: any pending work restores the original
+		// HIGH_POWER clock/voltage synchronously (~150-300us, far below the
+		// 5ms+ ep buffer headroom). Downclock only happens when fully idle:
+		// no packets for IDLE_DOWN_DELAY_US, no buffered data, output quiesced,
+		// no ESS I2C traffic.
+#if ENABLE_IDLE_DOWN_CLOCK
+		if (idle_clock_down || is_high_power_mode)
+		{
+			bool work_pending = (get_size_using(&buffer_ep_Lch) > 0) ||
+			                    (get_size_using(&buffer_ep_Rch) > 0) ||
+			                    (get_size_using(&buffer_upsr_data_Lch_0) > 0) ||
+			                    enable_output;
+			bool audio_recent = ((int64_t)(time_us_64() - last_audio_time_us) <
+			                     (int64_t)IDLE_DOWN_DELAY_US);
+			bool want_down = is_high_power_mode && !work_pending && !audio_recent;
+#if USE_ESS_DAC
+			if (i2c_dma_is_busy() || (i2c_ringbuf_get_size_using(&i2c_ringbuffer0) > 0))
+				want_down = false;
+#endif
+			if (want_down && !idle_clock_down)
+			{
+				idle_clock_down = true;
+				renew_clock_idle_down(true);
+			}
+			else if (!want_down && idle_clock_down)
+			{
+				idle_clock_down = false;
+				renew_clock_idle_down(false);
+			}
+		}
+#endif
+
 		if (TEST_MODE)
 			gpio_put(TEST_PIN1, true);
 		upsampling_process_core0();
@@ -287,6 +341,41 @@ int main(void)
 			}
 		}
 
-		sleep_us(1);
+#if USE_ESS_DAC
+		bool ess_pending = (i2c_ringbuf_get_size_using(&i2c_ringbuffer0) > 0) || i2c_dma_is_busy();
+#else
+		bool ess_pending = false;
+#endif
+
+		// Low-power idle: when there is no audio to upsample and no I2C pending,
+		// wait-for-interrupt instead of busy-looping. The core wakes on the next
+		// event (USB buffer-status IRQ for new data, or timer0 housekeeping at
+		// TIMER0_US). System/USB clocks keep running, so enumeration is preserved.
+		// Track the last time audio data actually arrived (now_playing is
+		// bumped by the USB audio packet handler).
+		static uint32_t now_playing_seen = 0;
+		if (now_playing != now_playing_seen)
+		{
+			now_playing_seen = now_playing;
+			last_audio_time_us = time_us_64();
+		}
+
+		// Dynamic WFI poll period for Core0 (same idea as Core1):
+		//   playing (recent packets) -> CORE0_WFI_PLAY_US (250us)
+		//   idle (no recent packets) -> CORE0_WFI_IDLE_US (1ms)
+		if (ENABLE_LOW_POWER_IDLE_CORE0)
+		{
+			bool playing = ((int64_t)(time_us_64() - last_audio_time_us) < (int64_t)CORE0_PLAY_DETECT_US);
+			core0_timer_set_period(playing ? CORE0_WFI_PLAY_US : CORE0_WFI_IDLE_US);
+
+			if (!ess_pending)
+			{
+				__wfi();
+			}
+		}
+		else
+		{
+			sleep_us(100);
+		}
 	}
 }

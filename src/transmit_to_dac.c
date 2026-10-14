@@ -31,7 +31,7 @@ static dma_channel_config c_dma[DMA_TX_CHAIN_CHANNELS];
 static volatile uint8_t dma_ch_state[DMA_TX_CHAIN_CHANNELS];
 DMA_TX_STRUCTURE dma_tx;
 
-bool enable_output = false;
+volatile bool enable_output = false;
 
 // PWM
 static uint16_t pwm_slice;
@@ -240,6 +240,7 @@ void __not_in_flash_func(dma_tx_start)(void)
         pio_sm_restart(pio, sm);
         reset_i2s_freq();
     }
+    bool was_running = enable_output_prev;
     enable_output_prev = enable_output;
 
     if (enable_output)
@@ -306,8 +307,33 @@ void __not_in_flash_func(dma_tx_start)(void)
     }
     else
     {
+        // Keep tearing down the (already idle) DMA state every iteration while
+        // stopped, exactly like the original code did. This is NOT redundant:
+        // Core0's timer ISR can call renew_clock() -> dma_stop_and_clear()
+        // concurrently with this loop, and that race can leave dma_tx->using /
+        // wp / rp corrupted. Periodic re-clear reconciles the state so the
+        // next playback start always begins from a clean slate (without it:
+        // stop->play again = silent deadlock). Safe now that
+        // dma_stop_and_clear() is lightweight (no giant buffer memset).
+        (void)was_running;
         dma_stop_and_clear();
     }
+}
+
+// Output is fully stopped (no frame enabled and nothing queued in DMA).
+// Core1 uses this to decide when it is safe to enter WFI.
+bool dma_tx_is_quiesced(void)
+{
+    return (!enable_output) && (dma_tx.using == 0);
+}
+
+// Playback is running but this iteration has nothing to submit (TX ring full).
+// Core1 may briefly WFI with a short poll period instead of busy-waiting;
+// DMA completions are polled (no DMA IRQ), so we must keep re-arming via
+// dma_tx_start() at the short poll period.
+bool dma_tx_no_submit_pending(void)
+{
+    return enable_output && (dma_tx.using >= SIZE_DMA_TX_BUF_STACK);
 }
 
 void dma_stop_and_clear(void)
@@ -322,7 +348,18 @@ void dma_stop_and_clear(void)
     // FIFOバッファをクリア
     pio_sm_clear_fifos(pio0, 0);
 
-    // 使用バッファをゼロクリア
-    memset((void *)&dma_tx, 0, sizeof(DMA_TX_STRUCTURE));
+    // Clear control state only.
+    // NOTE: previously this did memset(&dma_tx, 0, sizeof(DMA_TX_STRUCTURE)),
+    // i.e. zeroed the ~21KB of TX sample buffers as well. Since this function
+    // runs every idle iteration (state reconciliation), that memset was both
+    // wasteful and the reason an earlier "call once" optimization broke
+    // playback restart. The buffers do not need zeroing: valid data is only
+    // read via tx_size, which is reset to 0 below.
+    dma_tx.wp = 0;
+    dma_tx.rp = 0;
+    dma_tx.using = 0;
+    dma_tx.prev_write_length = 0;
+    for (int i = 0; i < DEPTH_DMA_TX_BUFFER; i++)
+        dma_tx.data[i].tx_size = 0;
     memset((void *)dma_ch_state, 0, sizeof(dma_ch_state));
 }
