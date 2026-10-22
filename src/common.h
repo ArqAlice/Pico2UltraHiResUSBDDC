@@ -3,6 +3,7 @@
 *
 * Released under the MIT license
 * https://opensource.org/licenses/mit-license.php
+
 */
 
 #ifndef _COMMON_H_
@@ -27,12 +28,12 @@
 #define TEST_PIN2 (2)
 
 // String Desc.
-#define MFG_NAME ("ArqAlice")
-#define DEVICE_NAME ("Pico2 UltraHiRes USB-DDC")
+#define MFG_NAME ("sola_c_plus")
+#define DEVICE_NAME ("PAMP DDC")
 #define WEBSITE_ADDR ("y.tomi0131@gmail.com:")
 
 // Faster I2S slew rate
-#define I2S_SLEWRATE_FAST_ENABLE (false)
+#define I2S_SLEWRATE_FAST_ENABLE (true)
 
 // Enhancement I2S signal output current
 #define I2S_STRENGTH_REINFORCE_ENABLE (true)
@@ -95,7 +96,7 @@
 
 // Core Voltage
 //#define V_CORE_HI VREG_VOLTAGE_1_50
-#define V_CORE_HI VREG_VOLTAGE_1_25
+#define V_CORE_HI VREG_VOLTAGE_1_30
 #define V_CORE_LO VREG_VOLTAGE_1_05
 
 
