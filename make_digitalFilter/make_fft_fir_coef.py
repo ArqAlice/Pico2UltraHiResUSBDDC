@@ -1,3 +1,4 @@
+import argparse
 import os
 from dataclasses import dataclass
 
@@ -384,7 +385,7 @@ def design_halfband(fs_out: float, f_pass: float, f_stop: float, atten_db: float
     center = float(taps_fir[taps // 2])
     center_index = (taps - 3) // 4
     stop_att = measure_stop_atten_db(taps_fir, fs_out, f_stop)
-    return even_taps, center, center_index, taps, beta, stop_att
+    return even_taps, center, center_index, taps, beta, stop_att, taps_fir
 
 
 def calc_dc_gain(head_h_fft: np.ndarray, tail_h_fft: np.ndarray, tail_parts: int) -> float:
@@ -429,6 +430,7 @@ def add_profiles(specs: list, name_prefix: str, profiles: list, maxima: dict):
                     "spec": spec,
                     "suffix": suffix,
                     "name_prefix": name_prefix,
+                    "taps": taps,
                     "head_fft_len": head_fft_len,
                     "head_block_len": spec.head_block_len,
                     "head_parts": 1,
@@ -476,6 +478,7 @@ def add_poly_profiles(specs: list, poly_profiles: list, maxima: dict):
                 {
                     "spec": spec,
                     "suffix": suffix,
+                    "taps": taps,
                     "taps_count": taps_count,
                     "phase_len": phase_len,
                     "stop_att": stop_att,
@@ -489,7 +492,165 @@ def add_poly_profiles(specs: list, poly_profiles: list, maxima: dict):
             maxima["poly_phase_len"] = max(maxima["poly_phase_len"], phase_len)
 
 
-def main():
+HALFBAND_NAMES = ("halfband_44", "halfband_48", "halfband_44_hi", "halfband_48_hi")
+
+
+def group_name_from_profile(profile: dict) -> str:
+    return f"{profile['name_prefix']}{profile['spec'].name}"
+
+
+def all_group_names() -> list:
+    names = [spec.name for spec in CORE0_SPECS]
+    names += [f"core1_{spec.name}" for spec in CORE1_SPECS]
+    names += [f"core1_poly_{spec.name}" for spec in CORE1_POLY_SPECS]
+    names += list(HALFBAND_NAMES)
+    return names
+
+
+def collect_plot_groups(profiles: list, poly_profiles: list, halfband_profiles: list) -> dict:
+    groups = {}
+    for p in profiles:
+        key = group_name_from_profile(p)
+        groups.setdefault(
+            key,
+            {
+                "fs_out": p["spec"].fs_out,
+                "f_pass": p["spec"].f_pass,
+                "f_stop": p["spec"].f_stop,
+                "variants": {},
+            },
+        )
+        groups[key]["variants"][p["suffix"]] = p["taps"]
+    for p in poly_profiles:
+        key = f"core1_poly_{p['spec'].name}"
+        groups.setdefault(
+            key,
+            {
+                "fs_out": p["spec"].fs_out,
+                "f_pass": p["spec"].f_pass,
+                "f_stop": p["spec"].f_stop,
+                "variants": {},
+            },
+        )
+        groups[key]["variants"][p["suffix"]] = p["taps"]
+    for h in halfband_profiles:
+        groups[h["name"]] = {
+            "fs_out": h["fs_out"],
+            "f_pass": h["f_pass"],
+            "f_stop": h["f_stop"],
+            "variants": {"design": h["taps"]},
+        }
+    return groups
+
+
+def build_group_responses(group: dict) -> tuple:
+    responses = {}
+    w = None
+    for suffix, taps in sorted(group["variants"].items()):
+        w, h = signal.freqz(taps, worN=FREQZ_POINTS, fs=group["fs_out"])
+        dc = abs(float(np.sum(taps)))
+        norm_db = 20.0 * np.log10(dc) if dc > 0.0 else 0.0
+        gain_db = 20.0 * np.log10(np.maximum(np.abs(h), 1e-300)) - norm_db
+        phase_deg = np.degrees(np.unwrap(np.angle(h)))
+        phase_deg[gain_db < -160.0] = np.nan
+        responses[suffix] = (gain_db, phase_deg)
+    return w, responses
+
+
+def write_response_csv(path: str, w: np.ndarray, responses: dict):
+    header = ["freq_hz"]
+    fmts = ["%.6e"]
+    cols = [w]
+    for suffix in sorted(responses.keys()):
+        gain_db, phase_deg = responses[suffix]
+        header += [f"gain_db_{suffix}", f"phase_deg_{suffix}"]
+        fmts += ["%.6f", "%.4f"]
+        cols += [gain_db, phase_deg]
+    arr = np.column_stack(cols)
+    np.savetxt(path, arr, delimiter=",", header=",".join(header), comments="", fmt=fmts)
+
+
+def plot_filter_responses(
+    profiles: list,
+    poly_profiles: list,
+    halfband_profiles: list,
+    patterns: list,
+    show: bool,
+    save_dir: str,
+    csv_dir: str,
+):
+    groups = collect_plot_groups(profiles, poly_profiles, halfband_profiles)
+    if patterns:
+        groups = {k: v for k, v in groups.items() if any(pat in k for pat in patterns)}
+    if not groups:
+        print("No filter groups match the given --filter patterns.")
+        return
+    for d in (save_dir, csv_dir):
+        if d:
+            os.makedirs(d, exist_ok=True)
+    if show or save_dir:
+        import matplotlib.pyplot as plt
+
+    for name, group in groups.items():
+        w, responses = build_group_responses(group)
+        if csv_dir:
+            write_response_csv(os.path.join(csv_dir, f"{name}.csv"), w, responses)
+        if not (show or save_dir):
+            continue
+        fig, (ax_gain, ax_phase) = plt.subplots(2, 1, figsize=(10, 8), sharex=True)
+        fig.suptitle(f"{name} (fs_out={group['fs_out']:.0f} Hz)")
+        for suffix, (gain_db, phase_deg) in responses.items():
+            linestyle = "--" if suffix == "lp" else "-"
+            ax_gain.plot(w, gain_db, linestyle=linestyle, label=suffix)
+            ax_phase.plot(w, phase_deg, linestyle=linestyle, label=suffix)
+        for ax in (ax_gain, ax_phase):
+            ax.axvline(group["f_pass"], color="gray", linestyle=":", linewidth=1.0)
+            ax.axvline(group["f_stop"], color="gray", linestyle=":", linewidth=1.0)
+            ax.grid(True, "major", linestyle="-", linewidth=0.7)
+            ax.set_xlim(0.0, group["fs_out"] / 2.0)
+        ax_gain.set_ylabel("Gain [dB]")
+        ax_gain.set_ylim(-180.0, 3.0)
+        ax_gain.legend(loc="lower left", fontsize=8)
+        ax_phase.set_ylabel("Phase [deg]")
+        ax_phase.set_xlabel("Frequency [Hz]")
+        ax_phase.legend(loc="lower left", fontsize=8)
+        if save_dir:
+            fig.savefig(os.path.join(save_dir, f"{name}.png"), dpi=150, bbox_inches="tight")
+        if not show:
+            plt.close(fig)
+
+    if show:
+        plt.show()
+        plt.close("all")
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(
+        description="Generate fft_fir_coef.c/.h and optionally plot designed filter frequency responses."
+    )
+    parser.add_argument("--plot", action="store_true", help="show frequency response figures (gain/phase)")
+    parser.add_argument("--save", metavar="DIR", help="save frequency response figures as PNG into DIR")
+    parser.add_argument(
+        "--csv",
+        metavar="DIR",
+        dest="csv_dir",
+        help="export plotted data (freq/gain/phase per filter) as CSV into DIR",
+    )
+    parser.add_argument(
+        "--filter",
+        metavar="NAME",
+        action="append",
+        dest="filters",
+        help="plot only groups whose name contains NAME (repeatable)",
+    )
+    parser.add_argument("--list-filters", action="store_true", help="list filter group names and exit")
+    args = parser.parse_args(argv)
+
+    if args.list_filters:
+        for name in all_group_names():
+            print(name)
+        return
+
     out_dir = os.path.join(os.path.dirname(__file__), "..", "src")
     os.makedirs(out_dir, exist_ok=True)
     header_path = os.path.join(out_dir, "fft_fir_coef.h")
@@ -509,18 +670,73 @@ def main():
         "poly_phase_len": 0,
     }
 
-    hb44_even, hb44_center, hb44_center_index, hb44_taps, hb44_beta, hb44_stop_att = design_halfband(
-        352800.0, HB_44_PASS_HZ, HB_44_STOP_HZ, HB_STOP_ATTEN_DB
-    )
-    hb48_even, hb48_center, hb48_center_index, hb48_taps, hb48_beta, hb48_stop_att = design_halfband(
-        384000.0, HB_48_PASS_HZ, HB_48_STOP_HZ, HB_STOP_ATTEN_DB
-    )
-    hb44_hi_even, hb44_hi_center, hb44_hi_center_index, hb44_hi_taps, hb44_hi_beta, hb44_hi_stop_att = design_halfband(
-        705600.0, HB_44_HI_PASS_HZ, HB_44_HI_STOP_HZ, HB_STOP_ATTEN_DB
-    )
-    hb48_hi_even, hb48_hi_center, hb48_hi_center_index, hb48_hi_taps, hb48_hi_beta, hb48_hi_stop_att = design_halfband(
-        768000.0, HB_48_HI_PASS_HZ, HB_48_HI_STOP_HZ, HB_STOP_ATTEN_DB
-    )
+    (
+        hb44_even,
+        hb44_center,
+        hb44_center_index,
+        hb44_taps,
+        hb44_beta,
+        hb44_stop_att,
+        hb44_taps_fir,
+    ) = design_halfband(352800.0, HB_44_PASS_HZ, HB_44_STOP_HZ, HB_STOP_ATTEN_DB)
+    (
+        hb48_even,
+        hb48_center,
+        hb48_center_index,
+        hb48_taps,
+        hb48_beta,
+        hb48_stop_att,
+        hb48_taps_fir,
+    ) = design_halfband(384000.0, HB_48_PASS_HZ, HB_48_STOP_HZ, HB_STOP_ATTEN_DB)
+    (
+        hb44_hi_even,
+        hb44_hi_center,
+        hb44_hi_center_index,
+        hb44_hi_taps,
+        hb44_hi_beta,
+        hb44_hi_stop_att,
+        hb44_hi_taps_fir,
+    ) = design_halfband(705600.0, HB_44_HI_PASS_HZ, HB_44_HI_STOP_HZ, HB_STOP_ATTEN_DB)
+    (
+        hb48_hi_even,
+        hb48_hi_center,
+        hb48_hi_center_index,
+        hb48_hi_taps,
+        hb48_hi_beta,
+        hb48_hi_stop_att,
+        hb48_hi_taps_fir,
+    ) = design_halfband(768000.0, HB_48_HI_PASS_HZ, HB_48_HI_STOP_HZ, HB_STOP_ATTEN_DB)
+
+    halfband_profiles = [
+        {
+            "name": "halfband_44",
+            "fs_out": 352800.0,
+            "f_pass": HB_44_PASS_HZ,
+            "f_stop": HB_44_STOP_HZ,
+            "taps": hb44_taps_fir,
+        },
+        {
+            "name": "halfband_48",
+            "fs_out": 384000.0,
+            "f_pass": HB_48_PASS_HZ,
+            "f_stop": HB_48_STOP_HZ,
+            "taps": hb48_taps_fir,
+        },
+        {
+            "name": "halfband_44_hi",
+            "fs_out": 705600.0,
+            "f_pass": HB_44_HI_PASS_HZ,
+            "f_stop": HB_44_HI_STOP_HZ,
+            "taps": hb44_hi_taps_fir,
+        },
+        {
+            "name": "halfband_48_hi",
+            "fs_out": 768000.0,
+            "f_pass": HB_48_HI_PASS_HZ,
+            "f_stop": HB_48_HI_STOP_HZ,
+            "taps": hb48_hi_taps_fir,
+        },
+    ]
 
     add_profiles(CORE0_SPECS, "", profiles, maxima)
     add_profiles(CORE1_SPECS, "core1_", profiles, maxima)
@@ -746,6 +962,17 @@ def main():
             cf.write(f"    .even_taps = {name_id}_even,\n")
             cf.write(f"    .odd_taps = {name_id}_odd,\n")
             cf.write("};\n\n")
+
+    if args.plot or args.save or args.csv_dir:
+        plot_filter_responses(
+            profiles,
+            poly_profiles,
+            halfband_profiles,
+            args.filters,
+            args.plot,
+            args.save,
+            args.csv_dir,
+        )
 
 
 if __name__ == "__main__":
