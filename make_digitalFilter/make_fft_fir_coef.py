@@ -543,7 +543,7 @@ def add_poly_profiles(specs: list, poly_profiles: list, maxima: dict):
 
 
 # ---------------------------------------------------------------------------
-# Frequency response plots
+# Frequency response plots / CSV export
 # ---------------------------------------------------------------------------
 
 
@@ -597,22 +597,32 @@ def filter_plot_groups(groups: list, patterns: list) -> list:
     return [g for g in groups if any(pat in g["label"] for pat in patterns)]
 
 
-def plot_response_group(group: dict, plt):
-    fig, axes = plt.subplots(2, 2, figsize=(12, 7), sharex="col", tight_layout=True)
-    ax_gain, ax_gain_zoom = axes[0, 0], axes[0, 1]
-    ax_phase, ax_phase_zoom = axes[1, 0], axes[1, 1]
-    fs = group["fs_out"]
-    nyq = fs / 2.0
-    f_stop = group["f_stop"]
-    zoom_stop = min(nyq, max(f_stop * 3.0, group["f_pass"] * 3.0))
+def group_zoom_stop_hz(group: dict) -> float:
+    return min(group["fs_out"] / 2.0, max(group["f_stop"] * 3.0, group["f_pass"] * 3.0))
 
+
+def compute_response(group: dict) -> list:
+    responses = []
     for variant, taps in group["variants"].items():
-        w, h = signal.freqz(taps, worN=FREQZ_POINTS, fs=fs)
+        w, h = signal.freqz(taps, worN=FREQZ_POINTS, fs=group["fs_out"])
         pass_mask = w <= group["f_pass"]
         ref = np.max(np.abs(h[pass_mask])) if np.any(pass_mask) else 1.0
         ref = ref if ref > 0 else 1.0
         gain_db = 20.0 * np.log10(np.maximum(np.abs(h) / ref, 1e-12))
         phase_deg = np.degrees(np.unwrap(np.angle(h)))
+        responses.append((variant, w, gain_db, phase_deg))
+    return responses
+
+
+def plot_response_group(group: dict, plt):
+    fig, axes = plt.subplots(2, 2, figsize=(12, 7), sharex="col", tight_layout=True)
+    ax_gain, ax_gain_zoom = axes[0, 0], axes[0, 1]
+    ax_phase, ax_phase_zoom = axes[1, 0], axes[1, 1]
+    fs = group["fs_out"]
+    f_stop = group["f_stop"]
+    zoom_stop = group_zoom_stop_hz(group)
+
+    for variant, w, gain_db, phase_deg in compute_response(group):
         color = "C0" if variant == "hp" else ("C1" if variant == "lp" else "C2")
         style = "-" if variant == "hp" else ("--" if variant == "lp" else "-")
         for ax in (ax_gain, ax_phase):
@@ -647,7 +657,44 @@ def sanitize_filename(name: str) -> str:
     return re.sub(r"[^A-Za-z0-9_.+-]", "_", name)
 
 
+def write_group_csv(group: dict, path: str) -> None:
+    responses = compute_response(group)
+    if not responses:
+        return
+    data_cols = [responses[0][1]]
+    header = ["freq_hz"]
+    for variant, _, gain_db, phase_deg in responses:
+        data_cols.append(gain_db)
+        header.append(f"gain_db_{variant}")
+        data_cols.append(phase_deg)
+        header.append(f"phase_deg_{variant}")
+    data = np.column_stack(data_cols)
+    meta = (
+        f"# label={group['label']} fs_out_hz={group['fs_out']:.1f} "
+        f"passband_hz={group['f_pass']:.1f} stopband_hz={group['f_stop']:.1f} "
+        f"zoom_stop_hz={group_zoom_stop_hz(group):.1f}"
+    )
+    with open(path, "w", encoding="utf-8", newline="\n") as f:
+        f.write(meta + "\n")
+        np.savetxt(f, data, fmt="%.6f", delimiter=",", header=",".join(header), comments="")
+    print(f"saved {path}")
+
+
 def plot_filters(profiles: list, poly_profiles: list, halfbands: dict, args) -> None:
+    groups = collect_plot_groups(profiles, poly_profiles, halfbands)
+    groups = filter_plot_groups(groups, args.filter)
+    if not groups:
+        print("no filter matched --filter patterns", file=sys.stderr)
+        return
+
+    if args.save_csv:
+        os.makedirs(args.save_csv, exist_ok=True)
+        for group in groups:
+            write_group_csv(group, os.path.join(args.save_csv, sanitize_filename(group["label"]) + ".csv"))
+
+    if not (args.plot or args.save_fig):
+        return
+
     try:
         import matplotlib
 
@@ -656,12 +703,6 @@ def plot_filters(profiles: list, poly_profiles: list, halfbands: dict, args) -> 
         import matplotlib.pyplot as plt
     except ImportError:
         print("matplotlib is not installed; skipping plots (pip install matplotlib)", file=sys.stderr)
-        return
-
-    groups = collect_plot_groups(profiles, poly_profiles, halfbands)
-    groups = filter_plot_groups(groups, args.filter)
-    if not groups:
-        print("no filter matched --filter patterns", file=sys.stderr)
         return
 
     if args.save_fig:
@@ -684,6 +725,11 @@ def parse_args(argv=None):
     )
     parser.add_argument("--plot", action="store_true", help="show frequency response (gain/phase) figures interactively")
     parser.add_argument("--save-fig", metavar="DIR", help="save frequency response figures as PNG into DIR")
+    parser.add_argument(
+        "--save-csv",
+        metavar="DIR",
+        help="export frequency response figure data (gain/phase vs frequency) as CSV into DIR",
+    )
     parser.add_argument("--plot-only", action="store_true", help="do not write src/fft_fir_coef.[ch]")
     parser.add_argument(
         "--filter",
@@ -819,7 +865,7 @@ def main(argv=None):
             hb48_hi_stop_att,
         )
 
-    if args.plot or args.save_fig:
+    if args.plot or args.save_fig or args.save_csv:
         plot_filters(profiles, poly_profiles, halfbands, args)
 
 
